@@ -125,12 +125,12 @@ func validateNetworking(networking *config.Networking) error {
 // validateReservedIP validates a reserved IP configuration
 func validateReservedIP(ip *config.ReservedIp) error {
 	// Regional IPs must have a region specified
-	if ip.Type == config.ReservedIpType_REGIONAL && ip.Region == config.Region_REGION_UNSPECIFIED {
+	if ip.Type == config.ReservedIpType_RESERVED_IP_TYPE_REGIONAL && ip.Region == config.Region_REGION_UNSPECIFIED {
 		return fmt.Errorf("regional reserved IP must specify a region")
 	}
 
 	// Global IPs should not have a region
-	if ip.Type == config.ReservedIpType_GLOBAL && ip.Region != config.Region_REGION_UNSPECIFIED {
+	if ip.Type == config.ReservedIpType_RESERVED_IP_TYPE_GLOBAL && ip.Region != config.Region_REGION_UNSPECIFIED {
 		return fmt.Errorf("global reserved IP should not specify a region")
 	}
 

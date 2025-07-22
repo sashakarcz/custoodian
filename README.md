@@ -48,13 +48,13 @@ project {
   id: "my-project-123"
   name: "My Application"
   billing_account: "123456-ABCDEF-GHIJKL"
-  apis: [API_COMPUTE, API_STORAGE, API_IAM]
+  apis: [GCP_API_COMPUTE, GCP_API_STORAGE, GCP_API_IAM]
 }
 
 networking {
   reserved_ips {
     name: "web-lb-ip"
-    type: GLOBAL
+    type: RESERVED_IP_TYPE_GLOBAL
   }
   
   vpcs {
@@ -70,7 +70,7 @@ networking {
 compute {
   instance_templates {
     name: "web-template"
-    machine_type: MACHINE_E2_MEDIUM
+    machine_type: MACHINE_TYPE_E2_MEDIUM
     image: "ubuntu-2004-lts"
     disk_size_gb: 20
     
@@ -98,7 +98,7 @@ compute {
 
 load_balancers {
   name: "main-lb"
-  type: LB_HTTP
+  type: LOAD_BALANCER_TYPE_HTTP
   ip: "web-lb-ip"
   backend: "web-group"
 }
@@ -165,9 +165,9 @@ enum Region {
 }
 
 enum MachineType {
-  MACHINE_E2_MICRO = 1;
-  MACHINE_E2_MEDIUM = 3;
-  MACHINE_N1_STANDARD_4 = 10;
+  MACHINE_TYPE_E2_MICRO = 1;
+  MACHINE_TYPE_E2_MEDIUM = 3;
+  MACHINE_TYPE_N1_STANDARD_4 = 10;
   // ... more machine types
 }
 ```

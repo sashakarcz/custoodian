@@ -12,12 +12,12 @@ project {
   name: "My Web Application"
   billing_account: "123456-ABCDEF-GHIJKL"
   apis: [
-    API_COMPUTE,
-    API_CONTAINER,
-    API_STORAGE,
-    API_MONITORING,
-    API_LOGGING,
-    API_IAM
+    GCP_API_COMPUTE,
+    GCP_API_CONTAINER,
+    GCP_API_STORAGE,
+    GCP_API_MONITORING,
+    GCP_API_LOGGING,
+    GCP_API_IAM
   ]
   labels {
     key: "environment"
@@ -33,7 +33,7 @@ networking {
   # Reserved IP for load balancer
   reserved_ips {
     name: "web-lb-ip"
-    type: GLOBAL
+    type: RESERVED_IP_TYPE_GLOBAL
     description: "Static IP for web application load balancer"
     network_tier: NETWORK_TIER_PREMIUM
   }
@@ -136,7 +136,7 @@ compute {
   instance_templates {
     name: "web-server-template"
     description: "Template for web server instances"
-    machine_type: MACHINE_E2_MEDIUM
+    machine_type: MACHINE_TYPE_E2_MEDIUM
     image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts"
     disk_size_gb: 20
     disk_type: DISK_TYPE_PD_BALANCED
@@ -212,7 +212,7 @@ compute {
 # Load balancer configuration
 load_balancers {
   name: "web-app-lb"
-  type: LB_HTTP
+  type: LOAD_BALANCER_TYPE_HTTP
   ip: "web-lb-ip"
   backend: "web-server-group"
   port_range: "80"

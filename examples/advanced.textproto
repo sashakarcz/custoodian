@@ -13,17 +13,17 @@ project {
   billing_account: "789012-XYZABC-DEFGHI"
   organization_id: "123456789012"
   apis: [
-    API_COMPUTE,
-    API_CONTAINER,
-    API_STORAGE,
-    API_BIGQUERY,
-    API_PUBSUB,
-    API_MONITORING,
-    API_LOGGING,
-    API_IAM,
-    API_CLOUD_DNS,
-    API_LOAD_BALANCING,
-    API_CLOUD_BUILD
+    GCP_API_COMPUTE,
+    GCP_API_CONTAINER,
+    GCP_API_STORAGE,
+    GCP_API_BIGQUERY,
+    GCP_API_PUBSUB,
+    GCP_API_MONITORING,
+    GCP_API_LOGGING,
+    GCP_API_IAM,
+    GCP_API_CLOUD_DNS,
+    GCP_API_LOAD_BALANCING,
+    GCP_API_CLOUD_BUILD
   ]
   labels {
     key: "environment"
@@ -43,7 +43,7 @@ networking {
   # Global load balancer IP
   reserved_ips {
     name: "global-lb-ip"
-    type: GLOBAL
+    type: RESERVED_IP_TYPE_GLOBAL
     description: "Global load balancer IP for HTTPS traffic"
     network_tier: NETWORK_TIER_PREMIUM
   }
@@ -51,7 +51,7 @@ networking {
   # Regional NAT gateway IPs
   reserved_ips {
     name: "nat-ip-us-central1"
-    type: REGIONAL
+    type: RESERVED_IP_TYPE_REGIONAL
     region: REGION_US_CENTRAL1
     description: "NAT gateway IP for US Central region"
     network_tier: NETWORK_TIER_PREMIUM
@@ -59,7 +59,7 @@ networking {
   
   reserved_ips {
     name: "nat-ip-europe-west1"
-    type: REGIONAL
+    type: RESERVED_IP_TYPE_REGIONAL
     region: REGION_EUROPE_WEST1
     description: "NAT gateway IP for Europe West region"
     network_tier: NETWORK_TIER_PREMIUM
@@ -266,7 +266,7 @@ compute {
   instance_templates {
     name: "web-server-high-perf"
     description: "High-performance web server template"
-    machine_type: MACHINE_C2_STANDARD_4
+    machine_type: MACHINE_TYPE_C2_STANDARD_4
     image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts"
     disk_size_gb: 50
     disk_type: DISK_TYPE_PD_SSD
@@ -308,7 +308,7 @@ compute {
   instance_templates {
     name: "app-server-template"
     description: "Application server template (private)"
-    machine_type: MACHINE_N2_STANDARD_4
+    machine_type: MACHINE_TYPE_N2_STANDARD_4
     image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts"
     disk_size_gb: 100
     disk_type: DISK_TYPE_PD_BALANCED
@@ -398,7 +398,7 @@ compute {
 # HTTPS Load balancer with advanced configuration
 load_balancers {
   name: "global-https-lb"
-  type: LB_HTTPS
+  type: LOAD_BALANCER_TYPE_HTTPS
   ip: "global-lb-ip"
   backend: "web-servers-us-central1"
   port_range: "443"

@@ -35,12 +35,12 @@ install: build
 # Format code
 fmt:
 	go fmt ./...
-	buf format -w
+	PATH=$(PATH):$(HOME)/go/bin buf format -w
 
 # Lint code
 lint: proto
 	go vet ./...
-	buf lint
+	PATH=$(PATH):$(HOME)/go/bin buf lint
 
 # Run all checks
 check: fmt lint test
