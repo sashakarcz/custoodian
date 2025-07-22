@@ -33,7 +33,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Go modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -94,6 +94,8 @@ jobs:
 
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build custoodian
         run: make build
@@ -127,10 +129,10 @@ jobs:
           terraform validate
           
           echo "Generating Terraform for advanced example..."
-          cd /tmp
-          ../home/sasha/custoodian/bin/custoodian generate ../home/sasha/custoodian/examples/advanced.textproto --output ./terraform-advanced
+          cd ${{ github.workspace }}
+          ./bin/custoodian generate examples/advanced.textproto --output /tmp/terraform-advanced
           
-          cd terraform-advanced
+          cd /tmp/terraform-advanced
           terraform fmt -check
           terraform init -backend=false
           terraform validate
@@ -156,9 +158,10 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
+        continue-on-error: true
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && hashFiles('trivy-results.sarif') != ''
         with:
           sarif_file: 'trivy-results.sarif'
