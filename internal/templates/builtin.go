@@ -324,10 +324,18 @@ resource "google_compute_instance_template" "{{ .Name }}" {
   {{- if or .Metadata .StartupScript}}
   metadata = {
     {{- range $key, $value := .Metadata}}
+    {{- if eq $key "startup-script"}}
+    {{ quote $key }} = <<-EOF
+{{ unescapeNewlines $value }}
+EOF
+    {{- else}}
     {{ quote $key }} = {{ quote $value }}
     {{- end}}
+    {{- end}}
     {{- if .StartupScript}}
-    startup-script = {{ quote .StartupScript }}
+    startup-script = <<-EOF
+{{ unescapeNewlines .StartupScript }}
+EOF
     {{- end}}
   }
   {{- end}}

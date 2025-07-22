@@ -146,6 +146,7 @@ func (g *Generator) loadTemplates() error {
 		"lower":              strings.ToLower,
 		"upper":              strings.ToUpper,
 		"replace":            strings.ReplaceAll,
+		"unescapeNewlines":   func(s string) string { return strings.ReplaceAll(s, "\\n", "\n") },
 	})
 
 	// Parse each template
