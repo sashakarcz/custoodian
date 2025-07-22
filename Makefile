@@ -1,8 +1,8 @@
 .PHONY: proto build test clean install
 
-# Generate protobuf code
+# Generate protobuf code  
 proto:
-	PATH=$(PATH):$(HOME)/go/bin buf generate
+	@which buf >/dev/null 2>&1 && buf generate || go run github.com/bufbuild/buf/cmd/buf@latest generate
 	@go run scripts/move-proto.go
 
 # Build the custoodian binary
@@ -35,12 +35,12 @@ install: build
 # Format code
 fmt:
 	go fmt ./...
-	PATH=$(PATH):$(HOME)/go/bin buf format -w
+	@which buf >/dev/null 2>&1 && buf format -w || go run github.com/bufbuild/buf/cmd/buf@latest format -w
 
 # Lint code
 lint: proto
 	go vet ./...
-	PATH=$(PATH):$(HOME)/go/bin buf lint
+	@which buf >/dev/null 2>&1 && buf lint || go run github.com/bufbuild/buf/cmd/buf@latest lint
 
 # Run all checks
 check: fmt lint test
