@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"custodian/internal/generator"
-	"custodian/internal/validator"
-	"custodian/pkg/config"
+	"custoodian/internal/generator"
+	"custoodian/internal/validator"
+	"custoodian/pkg/config"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/encoding/prototext"

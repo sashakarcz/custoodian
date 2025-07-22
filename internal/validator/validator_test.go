@@ -3,7 +3,7 @@ package validator
 import (
 	"testing"
 
-	"custodian/pkg/config"
+	"custoodian/pkg/config"
 )
 
 func TestValidateConfig(t *testing.T) {

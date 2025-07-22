@@ -1,7 +1,7 @@
 package main
 
 import (
-	"custodian/internal/cmd"
+	"custoodian/internal/cmd"
 	"os"
 )
 

@@ -1,12 +1,12 @@
-# Custodian - GCP Terraform Generator
+# Custoodian - GCP Terraform Generator
 
-[![Build Status](https://github.com/custodian/custodian/workflows/CI/badge.svg)](https://github.com/custodian/custodian/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/custodian/custodian)](https://goreportcard.com/report/github.com/custodian/custodian)
+[![Build Status](https://github.com/custoodian/custoodian/workflows/CI/badge.svg)](https://github.com/custoodian/custoodian/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/custoodian/custoodian)](https://goreportcard.com/report/github.com/custoodian/custoodian)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Custodian is a tool that generates Terraform code from Protocol Buffer text configurations for Google Cloud Platform resources. It provides type-safe infrastructure configuration with comprehensive validation and supports custom template systems.
+Custoodian is a tool that generates Terraform code from Protocol Buffer text configurations for Google Cloud Platform resources. It provides type-safe infrastructure configuration with comprehensive validation and supports custom template systems.
 
-Custodian leverages Protocol Buffers for strong typing and validation, catching configuration errors before Terraform runs.
+Custoodian leverages Protocol Buffers for strong typing and validation, catching configuration errors before Terraform runs.
 
 ## ✨ Features
 
@@ -26,15 +26,15 @@ Custodian leverages Protocol Buffers for strong typing and validation, catching 
 
 ```bash
 # Linux/macOS
-curl -L -o /usr/local/bin/custodian https://github.com/custodian/custodian/releases/latest/download/custodian-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/')
-chmod +x /usr/local/bin/custodian
+curl -L -o /usr/local/bin/custoodian https://github.com/custoodian/custoodian/releases/latest/download/custoodian-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/')
+chmod +x /usr/local/bin/custoodian
 ```
 
 #### Build from Source
 
 ```bash
-git clone https://github.com/custodian/custodian.git
-cd custodian
+git clone https://github.com/custoodian/custoodian.git
+cd custoodian
 make build
 sudo make install
 ```
@@ -107,13 +107,13 @@ load_balancers {
 2. **Validate the configuration**:
 
 ```bash
-custodian validate config.textproto
+custoodian validate config.textproto
 ```
 
 3. **Generate Terraform code**:
 
 ```bash
-custodian generate config.textproto --output ./terraform
+custoodian generate config.textproto --output ./terraform
 ```
 
 4. **Apply with Terraform**:
@@ -178,36 +178,36 @@ enum MachineType {
 
 ```bash
 # Basic generation
-custodian generate config.textproto
+custoodian generate config.textproto
 
 # With custom output directory
-custodian generate config.textproto --output ./infrastructure
+custoodian generate config.textproto --output ./infrastructure
 
 # Using custom templates
-custodian generate config.textproto --template-dir ./custom-templates
+custoodian generate config.textproto --template-dir ./custom-templates
 
 # Using templates from Git repository
-custodian generate config.textproto --template-repo github.com/org/templates
+custoodian generate config.textproto --template-repo github.com/org/templates
 
 # Dry run (show what would be generated)
-custodian generate config.textproto --dry-run
+custoodian generate config.textproto --dry-run
 ```
 
 #### Validate Configuration
 
 ```bash
 # Validate syntax and constraints
-custodian validate config.textproto
+custoodian validate config.textproto
 ```
 
 #### Display Schema
 
 ```bash
 # Show Protocol Buffer schema
-custodian schema
+custoodian schema
 
 # Export schema to directory
-custodian schema --output ./schema
+custoodian schema --output ./schema
 ```
 
 ### Custom Templates
@@ -217,7 +217,7 @@ Custodian supports custom Terraform templates for organizations that need specif
 #### Local Template Directory
 
 ```bash
-custodian generate config.textproto --template-dir ./my-templates
+custoodian generate config.textproto --template-dir ./my-templates
 ```
 
 Template directory structure:
@@ -236,7 +236,7 @@ my-templates/
 #### Git Repository Templates
 
 ```bash
-custodian generate config.textproto --template-repo github.com/myorg/gcp-templates
+custoodian generate config.textproto --template-repo github.com/myorg/gcp-templates
 ```
 
 ### GitHub Action
@@ -257,7 +257,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Generate Terraform
-        uses: custodian/custodian@v1
+        uses: custoodian/custoodian@v1
         with:
           config-file: 'infrastructure/config.textproto'
           output-dir: './generated-terraform'
@@ -343,8 +343,8 @@ See [`examples/advanced.textproto`](examples/advanced.textproto) for an enterpri
 ### Setup
 
 ```bash
-git clone https://github.com/custodian/custodian.git
-cd custodian
+git clone https://github.com/custoodian/custoodian.git
+cd custoodian
 
 # Install dependencies
 make deps
@@ -365,15 +365,15 @@ make check
 ### Project Structure
 
 ```
-custodian/
-├── cmd/custodian/          # CLI main package
+custoodian/
+├── cmd/custoodian/          # CLI main package
 ├── internal/
 │   ├── cmd/                # CLI commands
 │   ├── generator/          # Terraform generation
 │   ├── templates/          # Template system
 │   └── validator/          # Configuration validation
 ├── pkg/config/             # Generated protobuf code
-├── proto/custodian/        # Protocol buffer schemas
+├── proto/custoodian/        # Protocol buffer schemas
 ├── examples/               # Example configurations
 ├── templates/gcp/          # Built-in templates
 └── .github/workflows/      # CI/CD workflows
@@ -381,7 +381,7 @@ custodian/
 
 ### Adding New GCP Resources
 
-1. **Add to Protocol Buffer schema** (`proto/custodian/config.proto`):
+1. **Add to Protocol Buffer schema** (`proto/custoodian/config.proto`):
    ```protobuf
    message NewResource {
      string name = 1 [(buf.validate.field).string.min_len = 1];
@@ -389,7 +389,7 @@ custodian/
    }
    ```
 
-2. **Add to enums** if needed (`proto/custodian/enums.proto`):
+2. **Add to enums** if needed (`proto/custoodian/enums.proto`):
    ```protobuf
    enum NewResourceType {
      NEW_RESOURCE_TYPE_UNSPECIFIED = 0;
@@ -437,7 +437,7 @@ We welcome contributions!
 
 - Use GitHub Issues for bug reports and feature requests
 - Provide minimal reproducible examples
-- Include custodian version and environment details
+- Include custoodian version and environment details
 
 ### Pull Requests
 

@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"custodian/internal/validator"
+	"custoodian/internal/validator"
 
 	"github.com/spf13/cobra"
 )

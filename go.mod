@@ -1,4 +1,4 @@
-module custodian
+module custoodian
 
 go 1.21
 

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"text/template"
 
-	"custodian/internal/templates"
-	"custodian/pkg/config"
+	"custoodian/internal/templates"
+	"custoodian/pkg/config"
 )
 
 // Generator handles Terraform code generation from protobuf configurations

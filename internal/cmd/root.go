@@ -13,13 +13,13 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "custodian",
+	Use:   "custoodian",
 	Short: "Generate Terraform code from Protocol Buffer configurations for GCP",
-	Long: `Custodian is a tool that generates Terraform code from Protocol Buffer text configurations
+	Long: `Custoodian is a tool that generates Terraform code from Protocol Buffer text configurations
 for Google Cloud Platform resources. It provides type-safe infrastructure configuration
 with comprehensive validation and supports custom template systems.
 
-Inspired by Google's internal "latchkey" tool, custodian leverages Protocol Buffers
+Inspired by Google's internal "latchkey" tool, Custoodian leverages Protocol Buffers
 for strong typing and validation, catching configuration errors before Terraform runs.`,
 	Version: fmt.Sprintf("%s (commit: %s, built: %s)", version, commit, date),
 }

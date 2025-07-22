@@ -45,46 +45,11 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Generate protobuf code (Unix)
-        if: matrix.os != 'windows-latest'
+      - name: Generate protobuf code
         run: make proto
 
-      - name: Generate protobuf code (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          buf generate
-          if not exist pkg\config mkdir pkg\config
-          if exist proto\custodian\*.pb.go move proto\custodian\*.pb.go pkg\config\
-          del /Q proto\custodian\*.pb.validate.go 2>nul || exit /b 0
-        shell: cmd
-
-      - name: Verify generated files exist (Unix)
-        if: matrix.os != 'windows-latest'
-        run: |
-          ls -la pkg/config/
-          if [ ! -f pkg/config/config.pb.go ]; then
-            echo "config.pb.go not found!"
-            exit 1
-          fi
-          if [ ! -f pkg/config/enums.pb.go ]; then
-            echo "enums.pb.go not found!"
-            exit 1
-          fi
-        shell: bash
-
-      - name: Verify generated files exist (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          dir pkg\config\
-          if not exist pkg\config\config.pb.go (
-            echo config.pb.go not found!
-            exit /b 1
-          )
-          if not exist pkg\config\enums.pb.go (
-            echo enums.pb.go not found!
-            exit /b 1
-          )
-        shell: cmd
+      - name: Verify generated files exist
+        run: go run scripts/verify-proto.go
 
       - name: Run linting
         run: make lint
@@ -102,16 +67,16 @@ jobs:
 
       - name: Test CLI commands
         run: |
-          ./bin/custodian --version
-          ./bin/custodian --help
+          ./bin/custoodian --version
+          ./bin/custoodian --help
         if: matrix.os != 'windows-latest'
 
       - name: Test CLI commands (Windows)
         run: |
-          bin\custodian.exe --version
-          bin\custodian.exe --help
+          .\bin\custoodian.exe --version
+          .\bin\custoodian.exe --help
         if: matrix.os == 'windows-latest'
-        shell: cmd
+        shell: powershell
 
   integration:
     name: Integration Tests
@@ -130,20 +95,20 @@ jobs:
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1
 
-      - name: Build custodian
+      - name: Build custoodian
         run: make build
 
       - name: Test example configurations
         run: |
           echo "Testing simple example..."
-          ./bin/custodian validate examples/simple.textproto
+          ./bin/custoodian validate examples/simple.textproto
           
           echo "Testing advanced example..."
-          ./bin/custodian validate examples/advanced.textproto
+          ./bin/custoodian validate examples/advanced.textproto
           
           echo "Testing generation..."
-          ./bin/custodian generate examples/simple.textproto --output /tmp/terraform-simple --dry-run
-          ./bin/custodian generate examples/advanced.textproto --output /tmp/terraform-advanced --dry-run
+          ./bin/custoodian generate examples/simple.textproto --output /tmp/terraform-simple --dry-run
+          ./bin/custoodian generate examples/advanced.textproto --output /tmp/terraform-advanced --dry-run
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
@@ -153,7 +118,7 @@ jobs:
       - name: Test generated Terraform
         run: |
           echo "Generating Terraform for simple example..."
-          ./bin/custodian generate examples/simple.textproto --output /tmp/terraform-simple
+          ./bin/custoodian generate examples/simple.textproto --output /tmp/terraform-simple
           
           echo "Validating Terraform syntax..."
           cd /tmp/terraform-simple
@@ -163,7 +128,7 @@ jobs:
           
           echo "Generating Terraform for advanced example..."
           cd /tmp
-          ../home/sasha/custodian/bin/custodian generate ../home/sasha/custodian/examples/advanced.textproto --output ./terraform-advanced
+          ../home/sasha/custoodian/bin/custoodian generate ../home/sasha/custoodian/examples/advanced.textproto --output ./terraform-advanced
           
           cd terraform-advanced
           terraform fmt -check

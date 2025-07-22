@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package custodian;
+package custoodian;
 
-import "proto/custodian/enums.proto";
+import "proto/custoodian/enums.proto";
 
-option go_package = "custodian/pkg/config";
+option go_package = "custoodian/pkg/config";
 
 // Root configuration message
 message Config {

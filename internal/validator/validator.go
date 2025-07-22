@@ -5,7 +5,7 @@ import (
 	"net"
 	"regexp"
 
-	"custodian/pkg/config"
+	"custoodian/pkg/config"
 
 	"github.com/bufbuild/protovalidate-go"
 )

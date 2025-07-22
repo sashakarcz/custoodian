@@ -1,6 +1,6 @@
-name: 'Custodian - GCP Terraform Generator'
+name: 'Custoodian - GCP Terraform Generator'
 description: 'Generate Terraform code from Protocol Buffer configurations for Google Cloud Platform resources'
-author: 'custodian'
+author: 'custoodian'
 
 branding:
   icon: 'cloud'
@@ -40,22 +40,22 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Check if custodian is already installed
-      id: check-custodian
+    - name: Check if custoodian is already installed
+      id: check-custoodian
       shell: bash
       run: |
-        if command -v custodian &> /dev/null; then
+        if command -v custoodian &> /dev/null; then
           echo "installed=true" >> $GITHUB_OUTPUT
-          echo "version=$(custodian --version)" >> $GITHUB_OUTPUT
+          echo "version=$(custoodian --version)" >> $GITHUB_OUTPUT
         else
           echo "installed=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Install custodian
-      if: steps.check-custodian.outputs.installed != 'true'
+    - name: Install custoodian
+      if: steps.check-custoodian.outputs.installed != 'true'
       shell: bash
       run: |
-        # Download the latest custodian binary
+        # Download the latest custoodian binary
         CUSTODIAN_VERSION=${CUSTODIAN_VERSION:-latest}
         
         # Determine OS and architecture
@@ -67,24 +67,24 @@ runs:
           *) echo "Unsupported architecture: $ARCH" && exit 1 ;;
         esac
         
-        # Download custodian binary
-        DOWNLOAD_URL="https://github.com/custodian/custodian/releases/latest/download/custodian-${OS}-${ARCH}"
+        # Download custoodian binary
+        DOWNLOAD_URL="https://github.com/custoodian/custoodian/releases/latest/download/custoodian-${OS}-${ARCH}"
         if [[ "$CUSTODIAN_VERSION" != "latest" ]]; then
-          DOWNLOAD_URL="https://github.com/custodian/custodian/releases/download/${CUSTODIAN_VERSION}/custodian-${OS}-${ARCH}"
+          DOWNLOAD_URL="https://github.com/custoodian/custoodian/releases/download/${CUSTODIAN_VERSION}/custoodian-${OS}-${ARCH}"
         fi
         
-        echo "Downloading custodian from $DOWNLOAD_URL"
-        curl -L -o /usr/local/bin/custodian "$DOWNLOAD_URL"
-        chmod +x /usr/local/bin/custodian
+        echo "Downloading custoodian from $DOWNLOAD_URL"
+        curl -L -o /usr/local/bin/custoodian "$DOWNLOAD_URL"
+        chmod +x /usr/local/bin/custoodian
         
         # Verify installation
-        custodian --version
+        custoodian --version
 
     - name: Validate configuration
       shell: bash
       run: |
         echo "Validating configuration file: ${{ inputs.config-file }}"
-        if custodian validate "${{ inputs.config-file }}"; then
+        if custoodian validate "${{ inputs.config-file }}"; then
           echo "validation-result=success" >> $GITHUB_OUTPUT
           echo "✅ Configuration validation passed"
         else
@@ -99,8 +99,8 @@ runs:
       run: |
         echo "Generating Terraform code..."
         
-        # Build custodian command
-        CMD="custodian generate"
+        # Build custoodian command
+        CMD="custoodian generate"
         
         # Add output directory
         CMD="$CMD --output '${{ inputs.output-dir }}'"

@@ -57,3 +57,6 @@ terraform/
 
 # Local template development
 templates/local/
+
+# Utility scripts are kept
+# scripts/

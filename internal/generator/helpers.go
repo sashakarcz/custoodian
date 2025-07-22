@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"custodian/pkg/config"
+	"custoodian/pkg/config"
 )
 
 // regionToString converts a Region enum to its string representation

@@ -47,17 +47,17 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
-          BINARY_NAME=custodian
+          BINARY_NAME=custoodian
           if [ "$GOOS" = "windows" ]; then
-            BINARY_NAME=custodian.exe
+            BINARY_NAME=custoodian.exe
           fi
           
-          go build -ldflags="-w -s -X 'custodian/internal/cmd.version=${{ steps.version.outputs.VERSION }}' -X 'custodian/internal/cmd.commit=${{ github.sha }}' -X 'custodian/internal/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" -o $BINARY_NAME ./cmd/custodian
+          go build -ldflags="-w -s -X 'custoodian/internal/cmd.version=${{ steps.version.outputs.VERSION }}' -X 'custoodian/internal/cmd.commit=${{ github.sha }}' -X 'custoodian/internal/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" -o $BINARY_NAME ./cmd/custoodian
           
           if [ "$GOOS" = "windows" ]; then
-            zip custodian-${{ matrix.goos }}-${{ matrix.goarch }}.zip $BINARY_NAME
+            zip custoodian-${{ matrix.goos }}-${{ matrix.goarch }}.zip $BINARY_NAME
           else
-            tar czf custodian-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz $BINARY_NAME
+            tar czf custoodian-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz $BINARY_NAME
           fi
 
       - name: Upload build artifacts
@@ -65,8 +65,8 @@ jobs:
         with:
           name: binaries
           path: |
-            custodian-*.tar.gz
-            custodian-*.zip
+            custoodian-*.tar.gz
+            custoodian-*.zip
 
   docker:
     name: Build Docker Image
@@ -104,8 +104,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            custodian/custodian:latest
-            custodian/custodian:${{ steps.version.outputs.VERSION }}
+            custoodian/custoodian:latest
+            custoodian/custoodian:${{ steps.version.outputs.VERSION }}
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ steps.version.outputs.VERSION }}
           build-args: |
@@ -154,26 +154,26 @@ jobs:
           echo "" >> release-notes.md
           echo '```bash' >> release-notes.md
           echo '# Linux' >> release-notes.md
-          echo 'curl -L -o custodian https://github.com/custodian/custodian/releases/download/${{ steps.version.outputs.VERSION }}/custodian-linux-amd64.tar.gz' >> release-notes.md
-          echo 'tar xzf custodian-linux-amd64.tar.gz' >> release-notes.md
-          echo 'sudo mv custodian /usr/local/bin/' >> release-notes.md
+          echo 'curl -L -o custoodian https://github.com/custoodian/custoodian/releases/download/${{ steps.version.outputs.VERSION }}/custoodian-linux-amd64.tar.gz' >> release-notes.md
+          echo 'tar xzf custoodian-linux-amd64.tar.gz' >> release-notes.md
+          echo 'sudo mv custoodian /usr/local/bin/' >> release-notes.md
           echo '' >> release-notes.md
           echo '# macOS' >> release-notes.md
-          echo 'curl -L -o custodian https://github.com/custodian/custodian/releases/download/${{ steps.version.outputs.VERSION }}/custodian-darwin-amd64.tar.gz' >> release-notes.md
-          echo 'tar xzf custodian-darwin-amd64.tar.gz' >> release-notes.md
-          echo 'sudo mv custodian /usr/local/bin/' >> release-notes.md
+          echo 'curl -L -o custoodian https://github.com/custoodian/custoodian/releases/download/${{ steps.version.outputs.VERSION }}/custoodian-darwin-amd64.tar.gz' >> release-notes.md
+          echo 'tar xzf custoodian-darwin-amd64.tar.gz' >> release-notes.md
+          echo 'sudo mv custoodian /usr/local/bin/' >> release-notes.md
           echo '```' >> release-notes.md
           echo "" >> release-notes.md
           echo "### Docker" >> release-notes.md
           echo "" >> release-notes.md
           echo '```bash' >> release-notes.md
-          echo 'docker pull custodian/custodian:${{ steps.version.outputs.VERSION }}' >> release-notes.md
+          echo 'docker pull custoodian/custoodian:${{ steps.version.outputs.VERSION }}' >> release-notes.md
           echo '```' >> release-notes.md
           echo "" >> release-notes.md
           echo "### GitHub Action" >> release-notes.md
           echo "" >> release-notes.md
           echo '```yaml' >> release-notes.md
-          echo 'uses: custodian/custodian@${{ steps.version.outputs.VERSION }}' >> release-notes.md
+          echo 'uses: custoodian/custoodian@${{ steps.version.outputs.VERSION }}' >> release-notes.md
           echo 'with:' >> release-notes.md
           echo '  config-file: infrastructure/config.textproto' >> release-notes.md
           echo '```' >> release-notes.md
@@ -184,8 +184,8 @@ jobs:
           name: Release ${{ steps.version.outputs.VERSION }}
           body_path: release-notes.md
           files: |
-            custodian-*.tar.gz
-            custodian-*.zip
+            custoodian-*.tar.gz
+            custoodian-*.zip
           draft: false
           prerelease: ${{ contains(steps.version.outputs.VERSION, '-') }}
         env:
@@ -209,10 +209,10 @@ jobs:
           status: ${{ job.status }}
           channel: '#releases'
           text: |
-            🚀 Custodian ${{ steps.version.outputs.VERSION }} has been released!
+            🚀 Custoodian ${{ steps.version.outputs.VERSION }} has been released!
             
-            📦 Download: https://github.com/custodian/custodian/releases/tag/${{ steps.version.outputs.VERSION }}
-            🐳 Docker: `custodian/custodian:${{ steps.version.outputs.VERSION }}`
-            🔧 GitHub Action: `custodian/custodian@${{ steps.version.outputs.VERSION }}`
+            📦 Download: https://github.com/custoodian/custoodian/releases/tag/${{ steps.version.outputs.VERSION }}
+            🐳 Docker: `custoodian/custoodian:${{ steps.version.outputs.VERSION }}`
+            🔧 GitHub Action: `custoodian/custoodian@${{ steps.version.outputs.VERSION }}`
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

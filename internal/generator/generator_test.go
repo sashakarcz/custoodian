@@ -3,7 +3,7 @@ package generator
 import (
 	"testing"
 
-	"custodian/pkg/config"
+	"custoodian/pkg/config"
 )
 
 func TestNew(t *testing.T) {

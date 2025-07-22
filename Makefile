@@ -3,20 +3,15 @@
 # Generate protobuf code
 proto:
 	PATH=$(PATH):$(HOME)/go/bin buf generate
-	@mkdir -p pkg/config
-	@if [ -f proto/custodian/config.pb.go ]; then \
-		echo "Moving protobuf files to correct location..."; \
-		mv proto/custodian/*.pb.go pkg/config/; \
-	fi
-	@rm -f proto/custodian/*.pb.validate.go 2>/dev/null || true
+	@go run scripts/move-proto.go
 
-# Build the custodian binary
+# Build the custoodian binary
 build: proto
 	@mkdir -p bin
 ifeq ($(OS),Windows_NT)
-	go build -o bin/custodian.exe ./cmd/custodian
+	go build -o bin/custoodian.exe ./cmd/custoodian
 else
-	go build -o bin/custodian ./cmd/custodian
+	go build -o bin/custoodian ./cmd/custoodian
 endif
 
 # Install dependencies
@@ -33,9 +28,9 @@ clean:
 	rm -rf bin/
 	rm -f pkg/config/*.pb.go
 
-# Install custodian locally
+# Install custoodian locally
 install: build
-	sudo cp bin/custodian /usr/local/bin/
+	sudo cp bin/custoodian /usr/local/bin/
 
 # Format code
 fmt:
@@ -52,4 +47,4 @@ check: fmt lint test
 
 # Generate example configuration
 example:
-	./bin/custodian generate --template-dir templates/gcp --output examples/output examples/simple.textproto
+	./bin/custoodian generate --template-dir templates/gcp --output examples/output examples/simple.textproto
