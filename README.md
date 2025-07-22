@@ -431,8 +431,8 @@ custodian/
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
+We welcome contributions!
+ 
 ### Reporting Issues
 
 - Use GitHub Issues for bug reports and feature requests
@@ -456,10 +456,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [Protocol Buffers](https://protobuf.dev/) and [buf](https://buf.build/)
 - Uses [Cobra](https://github.com/spf13/cobra) for CLI framework
 - Terraform generation powered by Go's [text/template](https://pkg.go.dev/text/template)
-
-## 📞 Support
-
-- 📖 [Documentation](https://custodian.dev/docs)
-- 💬 [Discussions](https://github.com/custodian/custodian/discussions)
-- 🐛 [Issues](https://github.com/custodian/custodian/issues)
-- 📧 Email: support@custodian.dev
