@@ -45,8 +45,46 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Generate protobuf code
+      - name: Generate protobuf code (Unix)
+        if: matrix.os != 'windows-latest'
         run: make proto
+
+      - name: Generate protobuf code (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          buf generate
+          if not exist pkg\config mkdir pkg\config
+          if exist proto\custodian\*.pb.go move proto\custodian\*.pb.go pkg\config\
+          del /Q proto\custodian\*.pb.validate.go 2>nul || exit /b 0
+        shell: cmd
+
+      - name: Verify generated files exist (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          ls -la pkg/config/
+          if [ ! -f pkg/config/config.pb.go ]; then
+            echo "config.pb.go not found!"
+            exit 1
+          fi
+          if [ ! -f pkg/config/enums.pb.go ]; then
+            echo "enums.pb.go not found!"
+            exit 1
+          fi
+        shell: bash
+
+      - name: Verify generated files exist (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          dir pkg\config\
+          if not exist pkg\config\config.pb.go (
+            echo config.pb.go not found!
+            exit /b 1
+          )
+          if not exist pkg\config\enums.pb.go (
+            echo enums.pb.go not found!
+            exit /b 1
+          )
+        shell: cmd
 
       - name: Run linting
         run: make lint
@@ -70,9 +108,10 @@ jobs:
 
       - name: Test CLI commands (Windows)
         run: |
-          ./bin/custodian.exe --version
-          ./bin/custodian.exe --help
+          bin\custodian.exe --version
+          bin\custodian.exe --help
         if: matrix.os == 'windows-latest'
+        shell: cmd
 
   integration:
     name: Integration Tests
@@ -141,7 +180,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Gosec Security Scanner
-        uses: securecodewarrior/github-action-gosec@master
+        uses: securego/gosec@master
         with:
           args: './...'
 

@@ -3,10 +3,21 @@
 # Generate protobuf code
 proto:
 	PATH=$(PATH):$(HOME)/go/bin buf generate
+	@mkdir -p pkg/config
+	@if [ -f proto/custodian/config.pb.go ]; then \
+		echo "Moving protobuf files to correct location..."; \
+		mv proto/custodian/*.pb.go pkg/config/; \
+	fi
+	@rm -f proto/custodian/*.pb.validate.go 2>/dev/null || true
 
 # Build the custodian binary
 build: proto
+	@mkdir -p bin
+ifeq ($(OS),Windows_NT)
+	go build -o bin/custodian.exe ./cmd/custodian
+else
 	go build -o bin/custodian ./cmd/custodian
+endif
 
 # Install dependencies
 deps:
