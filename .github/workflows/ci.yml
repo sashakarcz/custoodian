@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  GO_VERSION: '1.21'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go-version: ['1.21', '1.22']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Generate protobuf code
+        run: make proto
+
+      - name: Run linting
+        run: make lint
+        if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.21'
+
+      - name: Run tests
+        run: make test
+
+      - name: Run race condition tests
+        run: go test -race -short ./...
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Build binary
+        run: make build
+
+      - name: Test CLI commands
+        run: |
+          ./bin/custodian --version
+          ./bin/custodian --help
+        if: matrix.os != 'windows-latest'
+
+      - name: Test CLI commands (Windows)
+        run: |
+          ./bin/custodian.exe --version
+          ./bin/custodian.exe --help
+        if: matrix.os == 'windows-latest'
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Build custodian
+        run: make build
+
+      - name: Test example configurations
+        run: |
+          echo "Testing simple example..."
+          ./bin/custodian validate examples/simple.textproto
+          
+          echo "Testing advanced example..."
+          ./bin/custodian validate examples/advanced.textproto
+          
+          echo "Testing generation..."
+          ./bin/custodian generate examples/simple.textproto --output /tmp/terraform-simple --dry-run
+          ./bin/custodian generate examples/advanced.textproto --output /tmp/terraform-advanced --dry-run
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.6.0'
+
+      - name: Test generated Terraform
+        run: |
+          echo "Generating Terraform for simple example..."
+          ./bin/custodian generate examples/simple.textproto --output /tmp/terraform-simple
+          
+          echo "Validating Terraform syntax..."
+          cd /tmp/terraform-simple
+          terraform fmt -check
+          terraform init -backend=false
+          terraform validate
+          
+          echo "Generating Terraform for advanced example..."
+          cd /tmp
+          ../home/sasha/custodian/bin/custodian generate ../home/sasha/custodian/examples/advanced.textproto --output ./terraform-advanced
+          
+          cd terraform-advanced
+          terraform fmt -check
+          terraform init -backend=false
+          terraform validate
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Gosec Security Scanner
+        uses: securecodewarrior/github-action-gosec@master
+        with:
+          args: './...'
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'

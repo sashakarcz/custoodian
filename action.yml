@@ -1,0 +1,174 @@
+name: 'Custodian - GCP Terraform Generator'
+description: 'Generate Terraform code from Protocol Buffer configurations for Google Cloud Platform resources'
+author: 'custodian'
+
+branding:
+  icon: 'cloud'
+  color: 'blue'
+
+inputs:
+  config-file:
+    description: 'Path to the Protocol Buffer text configuration file'
+    required: true
+  output-dir:
+    description: 'Output directory for generated Terraform files'
+    required: false
+    default: './terraform'
+  template-dir:
+    description: 'Local directory containing custom Terraform templates'
+    required: false
+  template-repo:
+    description: 'Git repository URL containing custom Terraform templates'
+    required: false
+  validate-only:
+    description: 'Only validate configuration without generating files'
+    required: false
+    default: 'false'
+  dry-run:
+    description: 'Show what would be generated without writing files'
+    required: false
+    default: 'false'
+
+outputs:
+  files-generated:
+    description: 'Number of Terraform files generated'
+  validation-result:
+    description: 'Configuration validation result'
+  output-directory:
+    description: 'Directory containing generated Terraform files'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check if custodian is already installed
+      id: check-custodian
+      shell: bash
+      run: |
+        if command -v custodian &> /dev/null; then
+          echo "installed=true" >> $GITHUB_OUTPUT
+          echo "version=$(custodian --version)" >> $GITHUB_OUTPUT
+        else
+          echo "installed=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Install custodian
+      if: steps.check-custodian.outputs.installed != 'true'
+      shell: bash
+      run: |
+        # Download the latest custodian binary
+        CUSTODIAN_VERSION=${CUSTODIAN_VERSION:-latest}
+        
+        # Determine OS and architecture
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+        ARCH=$(uname -m)
+        case $ARCH in
+          x86_64) ARCH="amd64" ;;
+          aarch64|arm64) ARCH="arm64" ;;
+          *) echo "Unsupported architecture: $ARCH" && exit 1 ;;
+        esac
+        
+        # Download custodian binary
+        DOWNLOAD_URL="https://github.com/custodian/custodian/releases/latest/download/custodian-${OS}-${ARCH}"
+        if [[ "$CUSTODIAN_VERSION" != "latest" ]]; then
+          DOWNLOAD_URL="https://github.com/custodian/custodian/releases/download/${CUSTODIAN_VERSION}/custodian-${OS}-${ARCH}"
+        fi
+        
+        echo "Downloading custodian from $DOWNLOAD_URL"
+        curl -L -o /usr/local/bin/custodian "$DOWNLOAD_URL"
+        chmod +x /usr/local/bin/custodian
+        
+        # Verify installation
+        custodian --version
+
+    - name: Validate configuration
+      shell: bash
+      run: |
+        echo "Validating configuration file: ${{ inputs.config-file }}"
+        if custodian validate "${{ inputs.config-file }}"; then
+          echo "validation-result=success" >> $GITHUB_OUTPUT
+          echo "✅ Configuration validation passed"
+        else
+          echo "validation-result=failed" >> $GITHUB_OUTPUT
+          echo "❌ Configuration validation failed"
+          exit 1
+        fi
+
+    - name: Generate Terraform code
+      if: inputs.validate-only != 'true'
+      shell: bash
+      run: |
+        echo "Generating Terraform code..."
+        
+        # Build custodian command
+        CMD="custodian generate"
+        
+        # Add output directory
+        CMD="$CMD --output '${{ inputs.output-dir }}'"
+        
+        # Add template source
+        if [[ -n "${{ inputs.template-dir }}" ]]; then
+          CMD="$CMD --template-dir '${{ inputs.template-dir }}'"
+        elif [[ -n "${{ inputs.template-repo }}" ]]; then
+          CMD="$CMD --template-repo '${{ inputs.template-repo }}'"
+        fi
+        
+        # Add dry-run flag if specified
+        if [[ "${{ inputs.dry-run }}" == "true" ]]; then
+          CMD="$CMD --dry-run"
+        fi
+        
+        # Add config file
+        CMD="$CMD '${{ inputs.config-file }}'"
+        
+        echo "Running: $CMD"
+        
+        # Execute command and capture output
+        OUTPUT=$(eval $CMD 2>&1)
+        EXIT_CODE=$?
+        
+        echo "$OUTPUT"
+        
+        if [[ $EXIT_CODE -eq 0 ]]; then
+          # Extract number of files generated (if not dry-run)
+          if [[ "${{ inputs.dry-run }}" != "true" ]]; then
+            FILES_GENERATED=$(echo "$OUTPUT" | grep -oP "Generated \K\d+" || echo "0")
+            echo "files-generated=$FILES_GENERATED" >> $GITHUB_OUTPUT
+            echo "output-directory=${{ inputs.output-dir }}" >> $GITHUB_OUTPUT
+            echo "✅ Generated $FILES_GENERATED Terraform files"
+          else
+            echo "files-generated=0" >> $GITHUB_OUTPUT
+            echo "output-directory=" >> $GITHUB_OUTPUT
+            echo "✅ Dry run completed successfully"
+          fi
+        else
+          echo "❌ Terraform generation failed"
+          exit $EXIT_CODE
+        fi
+
+    - name: List generated files
+      if: inputs.validate-only != 'true' && inputs.dry-run != 'true'
+      shell: bash
+      run: |
+        echo "Generated Terraform files:"
+        if [[ -d "${{ inputs.output-dir }}" ]]; then
+          find "${{ inputs.output-dir }}" -name "*.tf" -type f | sort
+        else
+          echo "No files generated or output directory not found"
+        fi
+
+    - name: Set up Terraform formatting
+      if: inputs.validate-only != 'true' && inputs.dry-run != 'true'
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: latest
+        terraform_wrapper: false
+
+    - name: Format generated Terraform code
+      if: inputs.validate-only != 'true' && inputs.dry-run != 'true'
+      shell: bash
+      run: |
+        if [[ -d "${{ inputs.output-dir }}" ]]; then
+          echo "Formatting generated Terraform code..."
+          terraform fmt -recursive "${{ inputs.output-dir }}"
+          echo "✅ Terraform code formatted"
+        fi

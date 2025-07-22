@@ -1,0 +1,679 @@
+# Advanced GCP Infrastructure Configuration
+# This example demonstrates more complex scenarios:
+# - Multi-region deployment
+# - Advanced networking with NAT gateways
+# - Multiple instance groups with different configurations
+# - HTTPS load balancer with SSL
+# - Comprehensive IAM setup
+# - Multiple storage buckets with different configurations
+
+project {
+  id: "enterprise-app-456"
+  name: "Enterprise Application"
+  billing_account: "789012-XYZABC-DEFGHI"
+  organization_id: "123456789012"
+  apis: [
+    API_COMPUTE,
+    API_CONTAINER,
+    API_STORAGE,
+    API_BIGQUERY,
+    API_PUBSUB,
+    API_MONITORING,
+    API_LOGGING,
+    API_IAM,
+    API_CLOUD_DNS,
+    API_LOAD_BALANCING,
+    API_CLOUD_BUILD
+  ]
+  labels {
+    key: "environment"
+    value: "production"
+  }
+  labels {
+    key: "cost-center"
+    value: "engineering"
+  }
+  labels {
+    key: "compliance"
+    value: "soc2"
+  }
+}
+
+networking {
+  # Global load balancer IP
+  reserved_ips {
+    name: "global-lb-ip"
+    type: GLOBAL
+    description: "Global load balancer IP for HTTPS traffic"
+    network_tier: NETWORK_TIER_PREMIUM
+  }
+  
+  # Regional NAT gateway IPs
+  reserved_ips {
+    name: "nat-ip-us-central1"
+    type: REGIONAL
+    region: REGION_US_CENTRAL1
+    description: "NAT gateway IP for US Central region"
+    network_tier: NETWORK_TIER_PREMIUM
+  }
+  
+  reserved_ips {
+    name: "nat-ip-europe-west1"
+    type: REGIONAL
+    region: REGION_EUROPE_WEST1
+    description: "NAT gateway IP for Europe West region"
+    network_tier: NETWORK_TIER_PREMIUM
+  }
+
+  # Enterprise VPC network
+  vpcs {
+    name: "enterprise-vpc"
+    description: "Enterprise-grade VPC with global routing"
+    auto_create_subnetworks: false
+    routing_mode: "GLOBAL"
+    
+    # US Central region subnets
+    subnets {
+      name: "web-us-central1"
+      cidr: "10.1.1.0/24"
+      region: REGION_US_CENTRAL1
+      description: "Web tier in US Central"
+      private_ip_google_access: true
+      
+      secondary_ranges {
+        range_name: "gke-pods-us-central1"
+        ip_cidr_range: "10.11.0.0/16"
+      }
+      secondary_ranges {
+        range_name: "gke-services-us-central1"
+        ip_cidr_range: "10.12.0.0/16"
+      }
+    }
+    
+    subnets {
+      name: "app-us-central1"
+      cidr: "10.1.2.0/24"
+      region: REGION_US_CENTRAL1
+      description: "Application tier in US Central"
+      private_ip_google_access: true
+    }
+    
+    subnets {
+      name: "data-us-central1"
+      cidr: "10.1.3.0/24"
+      region: REGION_US_CENTRAL1
+      description: "Data tier in US Central"
+      private_ip_google_access: true
+    }
+    
+    # Europe West region subnets
+    subnets {
+      name: "web-europe-west1"
+      cidr: "10.2.1.0/24"
+      region: REGION_EUROPE_WEST1
+      description: "Web tier in Europe West"
+      private_ip_google_access: true
+      
+      secondary_ranges {
+        range_name: "gke-pods-europe-west1"
+        ip_cidr_range: "10.21.0.0/16"
+      }
+      secondary_ranges {
+        range_name: "gke-services-europe-west1"
+        ip_cidr_range: "10.22.0.0/16"
+      }
+    }
+    
+    subnets {
+      name: "app-europe-west1"
+      cidr: "10.2.2.0/24"
+      region: REGION_EUROPE_WEST1
+      description: "Application tier in Europe West"
+      private_ip_google_access: true
+    }
+  }
+
+  # Comprehensive firewall rules
+  firewall_rules {
+    name: "allow-https-global"
+    description: "Allow HTTPS traffic globally"
+    direction: "INGRESS"
+    priority: 1000
+    network: "enterprise-vpc"
+    source_ranges: ["0.0.0.0/0"]
+    target_tags: ["https-server"]
+    
+    allow {
+      protocol: "tcp"
+      ports: ["443"]
+    }
+  }
+  
+  firewall_rules {
+    name: "allow-http-redirect"
+    description: "Allow HTTP for redirect to HTTPS"
+    direction: "INGRESS"
+    priority: 1000
+    network: "enterprise-vpc"
+    source_ranges: ["0.0.0.0/0"]
+    target_tags: ["web-server"]
+    
+    allow {
+      protocol: "tcp"
+      ports: ["80"]
+    }
+  }
+  
+  firewall_rules {
+    name: "allow-health-checks"
+    description: "Allow Google Cloud health checks"
+    direction: "INGRESS"
+    priority: 1000
+    network: "enterprise-vpc"
+    source_ranges: ["130.211.0.0/22", "35.191.0.0/16"]
+    target_tags: ["web-server", "app-server"]
+    
+    allow {
+      protocol: "tcp"
+      ports: ["80", "443", "8080"]
+    }
+  }
+  
+  firewall_rules {
+    name: "allow-internal-all"
+    description: "Allow all internal communication"
+    direction: "INGRESS"
+    priority: 1000
+    network: "enterprise-vpc"
+    source_ranges: ["10.0.0.0/8"]
+    
+    allow {
+      protocol: "tcp"
+      ports: ["0-65535"]
+    }
+    allow {
+      protocol: "udp"
+      ports: ["0-65535"]
+    }
+    allow {
+      protocol: "icmp"
+    }
+  }
+  
+  firewall_rules {
+    name: "deny-ssh-default"
+    description: "Deny SSH from internet (use IAP instead)"
+    direction: "INGRESS"
+    priority: 500
+    network: "enterprise-vpc"
+    source_ranges: ["0.0.0.0/0"]
+    
+    deny {
+      protocol: "tcp"
+      ports: ["22"]
+    }
+  }
+  
+  firewall_rules {
+    name: "allow-ssh-iap"
+    description: "Allow SSH through Identity-Aware Proxy"
+    direction: "INGRESS"
+    priority: 1000
+    network: "enterprise-vpc"
+    source_ranges: ["35.235.240.0/20"]
+    target_tags: ["ssh-iap-allowed"]
+    
+    allow {
+      protocol: "tcp"
+      ports: ["22"]
+    }
+  }
+
+  # NAT gateways for private instances
+  nat_gateways {
+    name: "nat-us-central1"
+    region: REGION_US_CENTRAL1
+    router: "router-us-central1"
+    nat_ip_allocate_option: "MANUAL_ONLY"
+    nat_ips: ["nat-ip-us-central1"]
+    
+    source_subnetwork_ip_ranges_to_nat {
+      name: "app-us-central1"
+      source_ip_ranges_to_nat: ["ALL_IP_RANGES"]
+    }
+    source_subnetwork_ip_ranges_to_nat {
+      name: "data-us-central1"
+      source_ip_ranges_to_nat: ["ALL_IP_RANGES"]
+    }
+  }
+  
+  nat_gateways {
+    name: "nat-europe-west1"
+    region: REGION_EUROPE_WEST1
+    router: "router-europe-west1"
+    nat_ip_allocate_option: "MANUAL_ONLY"
+    nat_ips: ["nat-ip-europe-west1"]
+    
+    source_subnetwork_ip_ranges_to_nat {
+      name: "app-europe-west1"
+      source_ip_ranges_to_nat: ["ALL_IP_RANGES"]
+    }
+  }
+}
+
+compute {
+  # High-performance web server template
+  instance_templates {
+    name: "web-server-high-perf"
+    description: "High-performance web server template"
+    machine_type: MACHINE_C2_STANDARD_4
+    image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts"
+    disk_size_gb: 50
+    disk_type: DISK_TYPE_PD_SSD
+    
+    network_interfaces {
+      subnetwork: "web-us-central1"
+      
+      access_configs {
+        name: "External NAT"
+        type: "ONE_TO_ONE_NAT"
+        network_tier: NETWORK_TIER_PREMIUM
+      }
+    }
+    
+    service_account: "web-server-sa"
+    scopes: [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+    
+    startup_script: "#!/bin/bash\n# Install and configure nginx with SSL\napt-get update\napt-get install -y nginx certbot python3-certbot-nginx\nsystemctl enable nginx\n# Configure monitoring agent\ncurl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh\nsudo bash add-google-cloud-ops-agent-repo.sh --also-install"
+    
+    tags: ["web-server", "https-server", "ssh-iap-allowed"]
+    
+    labels {
+      key: "tier"
+      value: "web"
+    }
+    labels {
+      key: "performance"
+      value: "high"
+    }
+    labels {
+      key: "environment"
+      value: "production"
+    }
+  }
+  
+  # Application server template (no external IP)
+  instance_templates {
+    name: "app-server-template"
+    description: "Application server template (private)"
+    machine_type: MACHINE_N2_STANDARD_4
+    image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts"
+    disk_size_gb: 100
+    disk_type: DISK_TYPE_PD_BALANCED
+    
+    network_interfaces {
+      subnetwork: "app-us-central1"
+      # No external access_config = private instance
+    }
+    
+    service_account: "app-server-sa"
+    scopes: [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+    
+    startup_script: "#!/bin/bash\n# Install application runtime\napt-get update\napt-get install -y openjdk-17-jdk docker.io\nsystemctl enable docker\nsystemctl start docker\n# Install monitoring\ncurl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh\nsudo bash add-google-cloud-ops-agent-repo.sh --also-install"
+    
+    tags: ["app-server", "ssh-iap-allowed"]
+    
+    labels {
+      key: "tier"
+      value: "application"
+    }
+    labels {
+      key: "environment"
+      value: "production"
+    }
+  }
+
+  # Web server instance groups (multi-region)
+  instance_groups {
+    name: "web-servers-us-central1"
+    description: "Web servers in US Central region"
+    template: "web-server-high-perf"
+    size: 3
+    base_instance_name: "web-us-central1"
+    
+    zones: [
+      ZONE_US_CENTRAL1_A,
+      ZONE_US_CENTRAL1_B,
+      ZONE_US_CENTRAL1_C
+    ]
+    
+    auto_scaling {
+      min: 2
+      max: 20
+      cpu_target: 0.7
+      cooldown_period: 180
+    }
+    
+    named_ports {
+      name: "http"
+      port: 80
+    }
+    named_ports {
+      name: "https"
+      port: 443
+    }
+  }
+  
+  # Application server instance group (private)
+  instance_groups {
+    name: "app-servers-us-central1"
+    description: "Application servers in US Central region"
+    template: "app-server-template"
+    size: 2
+    base_instance_name: "app-us-central1"
+    
+    zones: [
+      ZONE_US_CENTRAL1_A,
+      ZONE_US_CENTRAL1_B
+    ]
+    
+    auto_scaling {
+      min: 2
+      max: 10
+      cpu_target: 0.8
+      cooldown_period: 300
+    }
+    
+    named_ports {
+      name: "app-http"
+      port: 8080
+    }
+  }
+}
+
+# HTTPS Load balancer with advanced configuration
+load_balancers {
+  name: "global-https-lb"
+  type: LB_HTTPS
+  ip: "global-lb-ip"
+  backend: "web-servers-us-central1"
+  port_range: "443"
+  
+  health_check {
+    name: "https-health-check"
+    type: "HTTPS"
+    port: 443
+    request_path: "/health"
+    check_interval_sec: 5
+    timeout_sec: 3
+    healthy_threshold: 2
+    unhealthy_threshold: 2
+  }
+}
+
+# Comprehensive IAM configuration
+iam {
+  # Web server service account
+  service_accounts {
+    account_id: "web-server-sa"
+    display_name: "Web Server Service Account"
+    description: "Service account for web server instances"
+    roles: [
+      "roles/logging.logWriter",
+      "roles/monitoring.metricWriter",
+      "roles/storage.objectViewer"
+    ]
+  }
+  
+  # Application server service account
+  service_accounts {
+    account_id: "app-server-sa"
+    display_name: "Application Server Service Account"
+    description: "Service account for application server instances"
+    roles: [
+      "roles/logging.logWriter",
+      "roles/monitoring.metricWriter",
+      "roles/storage.admin",
+      "roles/bigquery.dataEditor",
+      "roles/pubsub.publisher"
+    ]
+  }
+  
+  # CI/CD service account with comprehensive permissions
+  service_accounts {
+    account_id: "cicd-deployment-sa"
+    display_name: "CI/CD Deployment Service Account"
+    description: "Service account for CI/CD deployment pipeline"
+    roles: [
+      "roles/compute.instanceAdmin",
+      "roles/iam.serviceAccountUser",
+      "roles/storage.admin",
+      "roles/cloudbuild.builds.builder",
+      "roles/container.developer"
+    ]
+    generate_key: true
+  }
+  
+  # Monitoring service account
+  service_accounts {
+    account_id: "monitoring-sa"
+    display_name: "Monitoring Service Account"
+    description: "Service account for monitoring and alerting"
+    roles: [
+      "roles/monitoring.admin",
+      "roles/logging.admin"
+    ]
+  }
+  
+  # Development team access
+  role_bindings {
+    role: "roles/compute.viewer"
+    members: [
+      "group:developers@company.com",
+      "group:qa@company.com"
+    ]
+  }
+  
+  # DevOps team access
+  role_bindings {
+    role: "roles/compute.admin"
+    members: [
+      "group:devops@company.com"
+    ]
+  }
+  
+  # Security team access
+  role_bindings {
+    role: "roles/security.admin"
+    members: [
+      "group:security@company.com"
+    ]
+  }
+  
+  # Custom roles for specific permissions
+  custom_roles {
+    role_id: "deploymentManager"
+    title: "Deployment Manager"
+    description: "Custom role for managing deployments"
+    stage: "GA"
+    permissions: [
+      "compute.instances.start",
+      "compute.instances.stop",
+      "compute.instances.reset",
+      "compute.instanceGroups.get",
+      "compute.instanceGroupManagers.get",
+      "compute.instanceGroupManagers.update",
+      "storage.objects.create",
+      "storage.objects.delete",
+      "storage.objects.get"
+    ]
+  }
+  
+  custom_roles {
+    role_id: "applicationMonitor"
+    title: "Application Monitor"
+    description: "Custom role for application monitoring and debugging"
+    stage: "GA"
+    permissions: [
+      "monitoring.metricDescriptors.list",
+      "monitoring.metricDescriptors.get",
+      "monitoring.timeSeries.list",
+      "monitoring.alertPolicies.list",
+      "logging.entries.list",
+      "logging.logEntries.list",
+      "compute.instances.get",
+      "compute.instanceGroups.get"
+    ]
+  }
+}
+
+# Multi-purpose storage configuration
+storage {
+  # Production application data
+  buckets {
+    name: "enterprise-app-data-prod"
+    location: "US"
+    storage_class: "STANDARD"
+    uniform_bucket_level_access: true
+    versioning: true
+    
+    labels {
+      key: "environment"
+      value: "production"
+    }
+    labels {
+      key: "data-classification"
+      value: "sensitive"
+    }
+    labels {
+      key: "retention-policy"
+      value: "7-years"
+    }
+    
+    # Transition to cheaper storage classes
+    lifecycle_rules {
+      action {
+        type: "SetStorageClass"
+        storage_class: "NEARLINE"
+      }
+      condition {
+        age: 30
+        matches_storage_class: ["STANDARD"]
+      }
+    }
+    
+    lifecycle_rules {
+      action {
+        type: "SetStorageClass"
+        storage_class: "COLDLINE"
+      }
+      condition {
+        age: 90
+        matches_storage_class: ["NEARLINE"]
+      }
+    }
+    
+    lifecycle_rules {
+      action {
+        type: "SetStorageClass"
+        storage_class: "ARCHIVE"
+      }
+      condition {
+        age: 365
+        matches_storage_class: ["COLDLINE"]
+      }
+    }
+  }
+  
+  # Static assets for global CDN
+  buckets {
+    name: "enterprise-app-cdn-assets"
+    location: "US"
+    storage_class: "STANDARD"
+    uniform_bucket_level_access: true
+    versioning: false
+    
+    labels {
+      key: "purpose"
+      value: "cdn-assets"
+    }
+    labels {
+      key: "environment"
+      value: "production"
+    }
+    
+    # Delete old assets after 30 days
+    lifecycle_rules {
+      action {
+        type: "Delete"
+      }
+      condition {
+        age: 30
+      }
+    }
+  }
+  
+  # Backup storage with long-term retention
+  buckets {
+    name: "enterprise-app-backups"
+    location: "US-CENTRAL1"
+    storage_class: "COLDLINE"
+    uniform_bucket_level_access: true
+    versioning: true
+    
+    labels {
+      key: "purpose"
+      value: "backups"
+    }
+    labels {
+      key: "retention"
+      value: "long-term"
+    }
+    
+    # Move to archive after 1 year
+    lifecycle_rules {
+      action {
+        type: "SetStorageClass"
+        storage_class: "ARCHIVE"
+      }
+      condition {
+        age: 365
+        matches_storage_class: ["COLDLINE"]
+      }
+    }
+  }
+  
+  # Logs storage for compliance
+  buckets {
+    name: "enterprise-app-audit-logs"
+    location: "US"
+    storage_class: "NEARLINE"
+    uniform_bucket_level_access: true
+    versioning: true
+    
+    labels {
+      key: "purpose"
+      value: "audit-logs"
+    }
+    labels {
+      key: "compliance"
+      value: "required"
+    }
+    
+    # Keep for 7 years for compliance, then archive
+    lifecycle_rules {
+      action {
+        type: "SetStorageClass"
+        storage_class: "ARCHIVE"
+      }
+      condition {
+        age: 2555  # 7 years
+        matches_storage_class: ["NEARLINE"]
+      }
+    }
+  }
+}

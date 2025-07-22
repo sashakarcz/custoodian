@@ -1,0 +1,330 @@
+# Simple GCP Infrastructure Configuration
+# This example shows a basic web application setup with:
+# - Project with enabled APIs
+# - VPC network with subnets
+# - Compute instances with auto-scaling
+# - Load balancer with health checks
+# - IAM service accounts
+# - Cloud Storage bucket
+
+project {
+  id: "my-app-project-123"
+  name: "My Web Application"
+  billing_account: "123456-ABCDEF-GHIJKL"
+  apis: [
+    API_COMPUTE,
+    API_CONTAINER,
+    API_STORAGE,
+    API_MONITORING,
+    API_LOGGING,
+    API_IAM
+  ]
+  labels {
+    key: "environment"
+    value: "production"
+  }
+  labels {
+    key: "team"
+    value: "infrastructure"
+  }
+}
+
+networking {
+  # Reserved IP for load balancer
+  reserved_ips {
+    name: "web-lb-ip"
+    type: GLOBAL
+    description: "Static IP for web application load balancer"
+    network_tier: NETWORK_TIER_PREMIUM
+  }
+
+  # VPC network
+  vpcs {
+    name: "main-vpc"
+    description: "Main VPC network for web application"
+    auto_create_subnetworks: false
+    routing_mode: "GLOBAL"
+    
+    # Web tier subnet
+    subnets {
+      name: "web-subnet"
+      cidr: "10.0.1.0/24"
+      region: REGION_US_CENTRAL1
+      description: "Subnet for web servers"
+      private_ip_google_access: true
+      
+      # Secondary range for pods (if using GKE)
+      secondary_ranges {
+        range_name: "pods"
+        ip_cidr_range: "10.1.0.0/16"
+      }
+      
+      # Secondary range for services (if using GKE)
+      secondary_ranges {
+        range_name: "services"
+        ip_cidr_range: "10.2.0.0/16"
+      }
+    }
+    
+    # Database tier subnet
+    subnets {
+      name: "db-subnet"
+      cidr: "10.0.2.0/24"
+      region: REGION_US_CENTRAL1
+      description: "Subnet for database servers"
+      private_ip_google_access: true
+    }
+  }
+
+  # Firewall rules
+  firewall_rules {
+    name: "allow-http-https"
+    description: "Allow HTTP and HTTPS traffic from internet"
+    direction: "INGRESS"
+    priority: 1000
+    network: "main-vpc"
+    source_ranges: ["0.0.0.0/0"]
+    target_tags: ["web-server"]
+    
+    allow {
+      protocol: "tcp"
+      ports: ["80", "443"]
+    }
+  }
+  
+  firewall_rules {
+    name: "allow-ssh-iap"
+    description: "Allow SSH through IAP"
+    direction: "INGRESS"
+    priority: 1000
+    network: "main-vpc"
+    source_ranges: ["35.235.240.0/20"]  # IAP IP range
+    target_tags: ["ssh-allowed"]
+    
+    allow {
+      protocol: "tcp"
+      ports: ["22"]
+    }
+  }
+  
+  firewall_rules {
+    name: "allow-internal"
+    description: "Allow internal communication"
+    direction: "INGRESS"
+    priority: 1000
+    network: "main-vpc"
+    source_ranges: ["10.0.0.0/16"]
+    
+    allow {
+      protocol: "tcp"
+      ports: ["0-65535"]
+    }
+    
+    allow {
+      protocol: "udp"
+      ports: ["0-65535"]
+    }
+    
+    allow {
+      protocol: "icmp"
+    }
+  }
+}
+
+compute {
+  # Instance template for web servers
+  instance_templates {
+    name: "web-server-template"
+    description: "Template for web server instances"
+    machine_type: MACHINE_E2_MEDIUM
+    image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts"
+    disk_size_gb: 20
+    disk_type: DISK_TYPE_PD_BALANCED
+    
+    network_interfaces {
+      subnetwork: "web-subnet"
+      
+      access_configs {
+        name: "External NAT"
+        type: "ONE_TO_ONE_NAT"
+        network_tier: NETWORK_TIER_PREMIUM
+      }
+    }
+    
+    service_account: "web-app-sa"
+    scopes: [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+    
+    metadata {
+      key: "startup-script"
+      value: "#!/bin/bash\napt-get update\napt-get install -y nginx\nsystemctl start nginx\nsystemctl enable nginx"
+    }
+    
+    tags: ["web-server", "ssh-allowed"]
+    
+    labels {
+      key: "tier"
+      value: "web"
+    }
+    labels {
+      key: "environment"
+      value: "production"
+    }
+    
+    preemptible: false
+  }
+
+  # Managed instance group with auto-scaling
+  instance_groups {
+    name: "web-server-group"
+    description: "Auto-scaling group for web servers"
+    template: "web-server-template"
+    size: 3
+    base_instance_name: "web-server"
+    
+    zones: [
+      ZONE_US_CENTRAL1_A,
+      ZONE_US_CENTRAL1_B,
+      ZONE_US_CENTRAL1_C
+    ]
+    
+    # Auto-scaling configuration
+    auto_scaling {
+      min: 2
+      max: 10
+      cpu_target: 0.6
+      cooldown_period: 120
+    }
+    
+    # Named ports for load balancer
+    named_ports {
+      name: "http"
+      port: 80
+    }
+    named_ports {
+      name: "https"
+      port: 443
+    }
+  }
+}
+
+# Load balancer configuration
+load_balancers {
+  name: "web-app-lb"
+  type: LB_HTTP
+  ip: "web-lb-ip"
+  backend: "web-server-group"
+  port_range: "80"
+  
+  health_check {
+    name: "web-health-check"
+    type: "HTTP"
+    port: 80
+    request_path: "/health"
+    check_interval_sec: 10
+    timeout_sec: 5
+    healthy_threshold: 2
+    unhealthy_threshold: 3
+  }
+}
+
+# IAM configuration
+iam {
+  # Service account for web application
+  service_accounts {
+    account_id: "web-app-sa"
+    display_name: "Web Application Service Account"
+    description: "Service account for web application instances"
+    roles: [
+      "roles/logging.logWriter",
+      "roles/monitoring.metricWriter",
+      "roles/storage.objectViewer"
+    ]
+    generate_key: false
+  }
+  
+  # Service account for CI/CD
+  service_accounts {
+    account_id: "ci-cd-sa"
+    display_name: "CI/CD Service Account"
+    description: "Service account for CI/CD pipeline"
+    roles: [
+      "roles/compute.instanceAdmin",
+      "roles/iam.serviceAccountUser",
+      "roles/storage.admin"
+    ]
+    generate_key: true
+  }
+  
+  # Project-level IAM bindings
+  role_bindings {
+    role: "roles/compute.viewer"
+    members: [
+      "group:developers@company.com"
+    ]
+  }
+  
+  role_bindings {
+    role: "roles/compute.admin"
+    members: [
+      "user:admin@company.com"
+    ]
+  }
+  
+  # Custom role for application monitoring
+  custom_roles {
+    role_id: "webAppMonitor"
+    title: "Web Application Monitor"
+    description: "Custom role for web application monitoring"
+    stage: "GA"
+    permissions: [
+      "monitoring.metricDescriptors.list",
+      "monitoring.metricDescriptors.get",
+      "monitoring.timeSeries.list",
+      "logging.entries.list"
+    ]
+  }
+}
+
+# Storage configuration
+storage {
+  buckets {
+    name: "my-app-static-assets"
+    location: "US"
+    storage_class: "STANDARD"
+    uniform_bucket_level_access: true
+    versioning: true
+    
+    labels {
+      key: "purpose"
+      value: "static-assets"
+    }
+    labels {
+      key: "environment"
+      value: "production"
+    }
+    
+    # Lifecycle rule to transition old versions to cheaper storage
+    lifecycle_rules {
+      action {
+        type: "SetStorageClass"
+        storage_class: "NEARLINE"
+      }
+      condition {
+        age: 30
+        matches_storage_class: ["STANDARD"]
+      }
+    }
+    
+    # Lifecycle rule to delete very old versions
+    lifecycle_rules {
+      action {
+        type: "Delete"
+      }
+      condition {
+        age: 365
+      }
+    }
+  }
+}

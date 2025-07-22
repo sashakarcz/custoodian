@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+README.md
+CONTRIBUTING.md
+LICENSE
+
+# Build artifacts
+bin/
+*.tar.gz
+*.zip
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+*.out
+
+# Examples (include in image for testing)
+# examples/
+
+# Temporary files
+*.tmp
+*.log
