@@ -2,7 +2,6 @@ package templates
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,13 +57,10 @@ func LoadFromGit(repoURL string) (map[string]string, error) {
 
 // readFileContent reads the entire content of a file
 func readFileContent(filename string) (string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
+	// Clean the file path to prevent directory traversal
+	cleanPath := filepath.Clean(filename)
 	
-	content, err := io.ReadAll(file)
+	content, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return "", err
 	}

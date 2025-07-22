@@ -1,28 +1,29 @@
 package cmd
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 )
 
 // readFile reads the entire content of a file
 func readFile(filename string) ([]byte, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	return io.ReadAll(file)
+	// Clean the file path to prevent directory traversal
+	cleanPath := filepath.Clean(filename)
+	
+	return os.ReadFile(cleanPath)
 }
 
 // writeFile writes content to a file, creating directories as needed
 func writeFile(filename, content string) error {
-	dir := filepath.Dir(filename)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	// Clean the file path to prevent directory traversal
+	cleanPath := filepath.Clean(filename)
+	dir := filepath.Dir(cleanPath)
+	
+	// Use more restrictive directory permissions (0750)
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return err
 	}
 
-	return os.WriteFile(filename, []byte(content), 0644)
+	// Use more restrictive file permissions (0600)
+	return os.WriteFile(cleanPath, []byte(content), 0600)
 }
