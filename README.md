@@ -129,7 +129,7 @@ terraform apply
 
 ### Protocol Buffer Schema
 
-Custodian uses Protocol Buffers to define infrastructure configurations. The main message types include:
+Custoodian uses Protocol Buffers to define infrastructure configurations. The main message types include:
 
 - `Project`: GCP project configuration, APIs, billing
 - `Networking`: VPCs, subnets, firewall rules, NAT gateways, reserved IPs
@@ -212,7 +212,7 @@ custoodian schema --output ./schema
 
 ### Custom Templates
 
-Custodian supports custom Terraform templates for organizations that need specific patterns:
+Custoodian supports custom Terraform templates for organizations that need specific patterns:
 
 #### Local Template Directory
 
@@ -241,7 +241,7 @@ custoodian generate config.textproto --template-repo github.com/myorg/gcp-templa
 
 ### GitHub Action
 
-Use Custodian in your CI/CD pipeline:
+Use Custoodian in your CI/CD pipeline:
 
 ```yaml
 name: Generate Infrastructure
