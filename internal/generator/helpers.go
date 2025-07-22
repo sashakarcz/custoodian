@@ -133,6 +133,19 @@ func apiToString(api config.GcpApi) string {
 	return ""
 }
 
+// networkTierToString converts a NetworkTier enum to its string representation
+func networkTierToString(nt config.NetworkTier) string {
+	networkTierMap := map[config.NetworkTier]string{
+		config.NetworkTier_NETWORK_TIER_PREMIUM:  "PREMIUM",
+		config.NetworkTier_NETWORK_TIER_STANDARD: "STANDARD",
+	}
+	
+	if str, ok := networkTierMap[nt]; ok {
+		return str
+	}
+	return "PREMIUM" // default
+}
+
 // indent adds indentation to each line of the input string
 func indent(spaces int, text string) string {
 	indentation := strings.Repeat(" ", spaces)

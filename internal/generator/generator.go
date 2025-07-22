@@ -140,6 +140,7 @@ func (g *Generator) loadTemplates() error {
 		"zoneToString":       zoneToString,
 		"machineTypeToString": machineTypeToString,
 		"apiToString":        apiToString,
+		"networkTierToString": networkTierToString,
 		"indent":             indent,
 		"quote":              quote,
 		"join":               strings.Join,

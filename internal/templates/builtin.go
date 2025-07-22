@@ -85,7 +85,7 @@ resource "google_compute_address" "{{ .Name }}" {
   description  = {{ quote .Description }}
   {{- end}}
   {{- if .NetworkTier}}
-  network_tier = {{ quote .NetworkTier.String }}
+  network_tier = {{ quote (networkTierToString .NetworkTier) }}
   {{- end}}
 }
 {{- end}}
@@ -287,9 +287,6 @@ resource "google_compute_instance_template" "{{ .Name }}" {
     {{- if .AccessConfigs}}
     {{- range .AccessConfigs}}
     access_config {
-      {{- if .Name}}
-      name = {{ quote .Name }}
-      {{- end}}
       {{- if .Type}}
       nat_ip = {{ quote .Type }}
       {{- end}}
@@ -297,7 +294,7 @@ resource "google_compute_instance_template" "{{ .Name }}" {
       nat_ip = google_compute_address.{{ .NatIp }}.address
       {{- end}}
       {{- if .NetworkTier}}
-      network_tier = {{ quote .NetworkTier.String }}
+      network_tier = {{ quote (networkTierToString .NetworkTier) }}
       {{- end}}
     }
     {{- end}}
