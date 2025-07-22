@@ -76,7 +76,7 @@ jobs:
           .\bin\custoodian.exe --version
           .\bin\custoodian.exe --help
         if: matrix.os == 'windows-latest'
-        shell: powershell
+        shell: cmd
 
   integration:
     name: Integration Tests
