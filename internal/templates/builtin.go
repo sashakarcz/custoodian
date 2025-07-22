@@ -28,6 +28,12 @@ terraform {
   }
 }
 
+provider "google" {
+  project = {{ quote .Id }}
+  region  = "us-central1"
+  zone    = "us-central1-a"
+}
+
 # Create the project
 resource "google_project" "project" {
   name            = {{ quote .Name }}
