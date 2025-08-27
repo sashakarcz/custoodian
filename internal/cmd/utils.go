@@ -9,7 +9,7 @@ import (
 func readFile(filename string) ([]byte, error) {
 	// Clean the file path to prevent directory traversal
 	cleanPath := filepath.Clean(filename)
-	
+
 	return os.ReadFile(cleanPath)
 }
 
@@ -18,7 +18,7 @@ func writeFile(filename, content string) error {
 	// Clean the file path to prevent directory traversal
 	cleanPath := filepath.Clean(filename)
 	dir := filepath.Dir(cleanPath)
-	
+
 	// Use more restrictive directory permissions (0750)
 	if err := os.MkdirAll(dir, 0750); err != nil {
 		return err

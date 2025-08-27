@@ -32,7 +32,7 @@ func regionToString(r config.Region) string {
 		config.Region_REGION_ASIA_SOUTHEAST1: "asia-southeast1",
 		config.Region_REGION_ASIA_SOUTHEAST2: "asia-southeast2",
 	}
-	
+
 	if str, ok := regionMap[r]; ok {
 		return str
 	}
@@ -42,22 +42,22 @@ func regionToString(r config.Region) string {
 // zoneToString converts a Zone enum to its string representation
 func zoneToString(z config.Zone) string {
 	zoneMap := map[config.Zone]string{
-		config.Zone_ZONE_US_CENTRAL1_A: "us-central1-a",
-		config.Zone_ZONE_US_CENTRAL1_B: "us-central1-b",
-		config.Zone_ZONE_US_CENTRAL1_C: "us-central1-c",
-		config.Zone_ZONE_US_CENTRAL1_F: "us-central1-f",
-		config.Zone_ZONE_US_EAST1_B:    "us-east1-b",
-		config.Zone_ZONE_US_EAST1_C:    "us-east1-c",
-		config.Zone_ZONE_US_EAST1_D:    "us-east1-d",
-		config.Zone_ZONE_US_EAST4_A:    "us-east4-a",
-		config.Zone_ZONE_US_EAST4_B:    "us-east4-b",
-		config.Zone_ZONE_US_EAST4_C:    "us-east4-c",
-		config.Zone_ZONE_US_WEST1_A:    "us-west1-a",
-		config.Zone_ZONE_US_WEST1_B:    "us-west1-b",
-		config.Zone_ZONE_US_WEST1_C:    "us-west1-c",
-		config.Zone_ZONE_US_WEST2_A:    "us-west2-a",
-		config.Zone_ZONE_US_WEST2_B:    "us-west2-b",
-		config.Zone_ZONE_US_WEST2_C:    "us-west2-c",
+		config.Zone_ZONE_US_CENTRAL1_A:  "us-central1-a",
+		config.Zone_ZONE_US_CENTRAL1_B:  "us-central1-b",
+		config.Zone_ZONE_US_CENTRAL1_C:  "us-central1-c",
+		config.Zone_ZONE_US_CENTRAL1_F:  "us-central1-f",
+		config.Zone_ZONE_US_EAST1_B:     "us-east1-b",
+		config.Zone_ZONE_US_EAST1_C:     "us-east1-c",
+		config.Zone_ZONE_US_EAST1_D:     "us-east1-d",
+		config.Zone_ZONE_US_EAST4_A:     "us-east4-a",
+		config.Zone_ZONE_US_EAST4_B:     "us-east4-b",
+		config.Zone_ZONE_US_EAST4_C:     "us-east4-c",
+		config.Zone_ZONE_US_WEST1_A:     "us-west1-a",
+		config.Zone_ZONE_US_WEST1_B:     "us-west1-b",
+		config.Zone_ZONE_US_WEST1_C:     "us-west1-c",
+		config.Zone_ZONE_US_WEST2_A:     "us-west2-a",
+		config.Zone_ZONE_US_WEST2_B:     "us-west2-b",
+		config.Zone_ZONE_US_WEST2_C:     "us-west2-c",
 		config.Zone_ZONE_EUROPE_WEST1_B: "europe-west1-b",
 		config.Zone_ZONE_EUROPE_WEST1_C: "europe-west1-c",
 		config.Zone_ZONE_EUROPE_WEST1_D: "europe-west1-d",
@@ -65,7 +65,7 @@ func zoneToString(z config.Zone) string {
 		config.Zone_ZONE_ASIA_EAST1_B:   "asia-east1-b",
 		config.Zone_ZONE_ASIA_EAST1_C:   "asia-east1-c",
 	}
-	
+
 	if str, ok := zoneMap[z]; ok {
 		return str
 	}
@@ -95,7 +95,7 @@ func machineTypeToString(mt config.MachineType) string {
 		config.MachineType_MACHINE_TYPE_C2_STANDARD_8:  "c2-standard-8",
 		config.MachineType_MACHINE_TYPE_C2_STANDARD_16: "c2-standard-16",
 	}
-	
+
 	if str, ok := machineTypeMap[mt]; ok {
 		return str
 	}
@@ -105,28 +105,28 @@ func machineTypeToString(mt config.MachineType) string {
 // apiToString converts a GcpApi enum to its service name
 func apiToString(api config.GcpApi) string {
 	apiMap := map[config.GcpApi]string{
-		config.GcpApi_GCP_API_COMPUTE:            "compute.googleapis.com",
-		config.GcpApi_GCP_API_CONTAINER:          "container.googleapis.com",
-		config.GcpApi_GCP_API_SQL_ADMIN:          "sqladmin.googleapis.com",
-		config.GcpApi_GCP_API_STORAGE:            "storage.googleapis.com",
-		config.GcpApi_GCP_API_BIGQUERY:           "bigquery.googleapis.com",
-		config.GcpApi_GCP_API_PUBSUB:             "pubsub.googleapis.com",
-		config.GcpApi_GCP_API_DATAFLOW:           "dataflow.googleapis.com",
-		config.GcpApi_GCP_API_MONITORING:         "monitoring.googleapis.com",
-		config.GcpApi_GCP_API_LOGGING:            "logging.googleapis.com",
-		config.GcpApi_GCP_API_IAM:                "iam.googleapis.com",
-		config.GcpApi_GCP_API_RESOURCE_MANAGER:   "cloudresourcemanager.googleapis.com",
-		config.GcpApi_GCP_API_CLOUD_BUILD:        "cloudbuild.googleapis.com",
-		config.GcpApi_GCP_API_CLOUD_FUNCTIONS:    "cloudfunctions.googleapis.com",
-		config.GcpApi_GCP_API_CLOUD_RUN:          "run.googleapis.com",
-		config.GcpApi_GCP_API_KUBERNETES_ENGINE:  "container.googleapis.com",
-		config.GcpApi_GCP_API_CLOUD_DNS:          "dns.googleapis.com",
-		config.GcpApi_GCP_API_CLOUD_CDN:          "compute.googleapis.com",
-		config.GcpApi_GCP_API_LOAD_BALANCING:     "compute.googleapis.com",
-		config.GcpApi_GCP_API_VPC_ACCESS:         "vpcaccess.googleapis.com",
-		config.GcpApi_GCP_API_FIREWALL:           "compute.googleapis.com",
+		config.GcpApi_GCP_API_COMPUTE:           "compute.googleapis.com",
+		config.GcpApi_GCP_API_CONTAINER:         "container.googleapis.com",
+		config.GcpApi_GCP_API_SQL_ADMIN:         "sqladmin.googleapis.com",
+		config.GcpApi_GCP_API_STORAGE:           "storage.googleapis.com",
+		config.GcpApi_GCP_API_BIGQUERY:          "bigquery.googleapis.com",
+		config.GcpApi_GCP_API_PUBSUB:            "pubsub.googleapis.com",
+		config.GcpApi_GCP_API_DATAFLOW:          "dataflow.googleapis.com",
+		config.GcpApi_GCP_API_MONITORING:        "monitoring.googleapis.com",
+		config.GcpApi_GCP_API_LOGGING:           "logging.googleapis.com",
+		config.GcpApi_GCP_API_IAM:               "iam.googleapis.com",
+		config.GcpApi_GCP_API_RESOURCE_MANAGER:  "cloudresourcemanager.googleapis.com",
+		config.GcpApi_GCP_API_CLOUD_BUILD:       "cloudbuild.googleapis.com",
+		config.GcpApi_GCP_API_CLOUD_FUNCTIONS:   "cloudfunctions.googleapis.com",
+		config.GcpApi_GCP_API_CLOUD_RUN:         "run.googleapis.com",
+		config.GcpApi_GCP_API_KUBERNETES_ENGINE: "container.googleapis.com",
+		config.GcpApi_GCP_API_CLOUD_DNS:         "dns.googleapis.com",
+		config.GcpApi_GCP_API_CLOUD_CDN:         "compute.googleapis.com",
+		config.GcpApi_GCP_API_LOAD_BALANCING:    "compute.googleapis.com",
+		config.GcpApi_GCP_API_VPC_ACCESS:        "vpcaccess.googleapis.com",
+		config.GcpApi_GCP_API_FIREWALL:          "compute.googleapis.com",
 	}
-	
+
 	if str, ok := apiMap[api]; ok {
 		return str
 	}
@@ -139,7 +139,7 @@ func networkTierToString(nt config.NetworkTier) string {
 		config.NetworkTier_NETWORK_TIER_PREMIUM:  "PREMIUM",
 		config.NetworkTier_NETWORK_TIER_STANDARD: "STANDARD",
 	}
-	
+
 	if str, ok := networkTierMap[nt]; ok {
 		return str
 	}

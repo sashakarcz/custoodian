@@ -63,12 +63,12 @@ func TestIsValidGCPProjectID(t *testing.T) {
 	}{
 		{"test-project-123", true},
 		{"my-app-prod", true},
-		{"short", false},                                           // too short
-		{"invalid-project-id-that-is-way-too-long", false},       // too long
-		{"Test-Project", false},                                   // uppercase
-		{"test_project", false},                                   // underscore
-		{"123-project", false},                                    // starts with number
-		{"project-", false},                                       // ends with dash
+		{"short", false},                                   // too short
+		{"invalid-project-id-that-is-way-too-long", false}, // too long
+		{"Test-Project", false},                            // uppercase
+		{"test_project", false},                            // underscore
+		{"123-project", false},                             // starts with number
+		{"project-", false},                                // ends with dash
 	}
 
 	for _, test := range tests {

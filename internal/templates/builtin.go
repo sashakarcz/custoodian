@@ -7,10 +7,10 @@ func GetBuiltinTemplates() map[string]string {
 		"networking.tf":     networkingTemplate,
 		"compute.tf":        computeTemplate,
 		"load_balancers.tf": loadBalancersTemplate,
-		"iam.tf":           iamTemplate,
-		"storage.tf":       storageTemplate,
-		"variables.tf":     variablesTemplate,
-		"outputs.tf":       outputsTemplate,
+		"iam.tf":            iamTemplate,
+		"storage.tf":        storageTemplate,
+		"variables.tf":      variablesTemplate,
+		"outputs.tf":        outputsTemplate,
 	}
 }
 

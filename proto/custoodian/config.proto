@@ -10,19 +10,19 @@ option go_package = "custoodian/pkg/config";
 message Config {
   // Project configuration
   Project project = 1;
-  
+
   // Networking configuration
   Networking networking = 2;
-  
+
   // Compute configuration
   Compute compute = 3;
-  
+
   // Load balancer configuration
   repeated LoadBalancer load_balancers = 4;
-  
+
   // IAM configuration
   Iam iam = 5;
-  
+
   // Storage configuration
   Storage storage = 6;
 }
@@ -31,22 +31,22 @@ message Config {
 message Project {
   // Project ID (must be globally unique)
   string id = 1;
-  
+
   // Human-readable project name
   string name = 2;
-  
+
   // Billing account ID
   string billing_account = 3;
-  
+
   // Organization ID (optional)
   string organization_id = 4;
-  
+
   // Folder ID (optional, mutually exclusive with organization_id)
   string folder_id = 5;
-  
+
   // APIs to enable
   repeated GcpApi apis = 6;
-  
+
   // Labels for the project
   map<string, string> labels = 7;
 }
@@ -55,13 +55,13 @@ message Project {
 message Networking {
   // Reserved IP addresses
   repeated ReservedIp reserved_ips = 1;
-  
+
   // VPC networks
   repeated Vpc vpcs = 2;
-  
+
   // Firewall rules
   repeated FirewallRule firewall_rules = 3;
-  
+
   // NAT gateways
   repeated NatGateway nat_gateways = 4;
 }
@@ -70,16 +70,16 @@ message Networking {
 message ReservedIp {
   // Name of the reserved IP
   string name = 1;
-  
+
   // Type of reserved IP (global or regional)
   ReservedIpType type = 2;
-  
+
   // Region (required for regional IPs)
   Region region = 3;
-  
+
   // Network tier
   NetworkTier network_tier = 4;
-  
+
   // Description
   string description = 5;
 }
@@ -88,16 +88,16 @@ message ReservedIp {
 message Vpc {
   // Name of the VPC
   string name = 1;
-  
+
   // Description
   string description = 2;
-  
+
   // Subnets
   repeated Subnet subnets = 3;
-  
+
   // Auto create subnetworks
   bool auto_create_subnetworks = 4;
-  
+
   // Routing mode
   string routing_mode = 5; // "GLOBAL" or "REGIONAL"
 }
@@ -106,19 +106,19 @@ message Vpc {
 message Subnet {
   // Name of the subnet
   string name = 1;
-  
+
   // CIDR range
   string cidr = 2;
-  
+
   // Region
   Region region = 3;
-  
+
   // Description
   string description = 4;
-  
+
   // Enable private Google access
   bool private_ip_google_access = 5;
-  
+
   // Secondary IP ranges
   repeated SecondaryRange secondary_ranges = 6;
 }
@@ -127,7 +127,7 @@ message Subnet {
 message SecondaryRange {
   // Range name
   string range_name = 1;
-  
+
   // IP CIDR range
   string ip_cidr_range = 2;
 }
@@ -136,34 +136,34 @@ message SecondaryRange {
 message FirewallRule {
   // Name of the firewall rule
   string name = 1;
-  
+
   // Description
   string description = 2;
-  
+
   // Direction (INGRESS or EGRESS)
   string direction = 3;
-  
+
   // Priority (0-65534)
   int32 priority = 4;
-  
+
   // Network
   string network = 5;
-  
+
   // Source ranges (for INGRESS)
   repeated string source_ranges = 6;
-  
+
   // Destination ranges (for EGRESS)
   repeated string destination_ranges = 7;
-  
+
   // Source tags (for INGRESS)
   repeated string source_tags = 8;
-  
+
   // Target tags
   repeated string target_tags = 9;
-  
+
   // Allowed protocols and ports
   repeated FirewallAllow allow = 10;
-  
+
   // Denied protocols and ports
   repeated FirewallDeny deny = 11;
 }
@@ -172,7 +172,7 @@ message FirewallRule {
 message FirewallAllow {
   // Protocol (tcp, udp, icmp, etc.)
   string protocol = 1;
-  
+
   // Ports
   repeated string ports = 2;
 }
@@ -181,7 +181,7 @@ message FirewallAllow {
 message FirewallDeny {
   // Protocol (tcp, udp, icmp, etc.)
   string protocol = 1;
-  
+
   // Ports
   repeated string ports = 2;
 }
@@ -190,19 +190,19 @@ message FirewallDeny {
 message NatGateway {
   // Name of the NAT gateway
   string name = 1;
-  
+
   // Region
   Region region = 2;
-  
+
   // Router name
   string router = 3;
-  
+
   // NAT IP allocate option
   string nat_ip_allocate_option = 4; // "MANUAL_ONLY" or "AUTO_ONLY"
-  
+
   // Static IP addresses
   repeated string nat_ips = 5;
-  
+
   // Source subnetwork IP ranges
   repeated NatSubnetwork source_subnetwork_ip_ranges_to_nat = 6;
 }
@@ -211,7 +211,7 @@ message NatGateway {
 message NatSubnetwork {
   // Name of the subnetwork
   string name = 1;
-  
+
   // Source IP ranges to NAT
   repeated string source_ip_ranges_to_nat = 2;
 }
@@ -220,10 +220,10 @@ message NatSubnetwork {
 message Compute {
   // Instance templates
   repeated InstanceTemplate instance_templates = 1;
-  
+
   // Instance groups
   repeated InstanceGroup instance_groups = 2;
-  
+
   // Individual instances
   repeated Instance instances = 3;
 }
@@ -232,43 +232,43 @@ message Compute {
 message InstanceTemplate {
   // Name of the template
   string name = 1;
-  
+
   // Description
   string description = 2;
-  
+
   // Machine type
   MachineType machine_type = 3;
-  
+
   // Boot disk image
   string image = 4;
-  
+
   // Boot disk size in GB
   int32 disk_size_gb = 5;
-  
+
   // Disk type
   DiskType disk_type = 6;
-  
+
   // Network interfaces
   repeated NetworkInterface network_interfaces = 7;
-  
+
   // Service account
   string service_account = 8;
-  
+
   // Scopes
   repeated string scopes = 9;
-  
+
   // Metadata
   map<string, string> metadata = 10;
-  
+
   // Tags
   repeated string tags = 11;
-  
+
   // Labels
   map<string, string> labels = 12;
-  
+
   // Startup script
   string startup_script = 13;
-  
+
   // Preemptible
   bool preemptible = 14;
 }
@@ -277,10 +277,10 @@ message InstanceTemplate {
 message NetworkInterface {
   // Network
   string network = 1;
-  
+
   // Subnetwork
   string subnetwork = 2;
-  
+
   // Access configs for external IP
   repeated AccessConfig access_configs = 3;
 }
@@ -289,13 +289,13 @@ message NetworkInterface {
 message AccessConfig {
   // Name
   string name = 1;
-  
+
   // Type (ONE_TO_ONE_NAT)
   string type = 2;
-  
+
   // NAT IP (reserved IP name)
   string nat_ip = 3;
-  
+
   // Network tier
   NetworkTier network_tier = 4;
 }
@@ -304,25 +304,25 @@ message AccessConfig {
 message InstanceGroup {
   // Name of the instance group
   string name = 1;
-  
+
   // Description
   string description = 2;
-  
+
   // Instance template
   string template = 3;
-  
+
   // Target size
   int32 size = 4;
-  
+
   // Zones
   repeated Zone zones = 5;
-  
+
   // Auto scaling configuration
   AutoScaling auto_scaling = 6;
-  
+
   // Named ports
   repeated NamedPort named_ports = 7;
-  
+
   // Base instance name
   string base_instance_name = 8;
 }
@@ -331,13 +331,13 @@ message InstanceGroup {
 message AutoScaling {
   // Minimum replicas
   int32 min = 1;
-  
+
   // Maximum replicas
   int32 max = 2;
-  
+
   // CPU target utilization
   float cpu_target = 3;
-  
+
   // Cooldown period
   int32 cooldown_period = 4;
 }
@@ -346,7 +346,7 @@ message AutoScaling {
 message NamedPort {
   // Name
   string name = 1;
-  
+
   // Port
   int32 port = 2;
 }
@@ -355,25 +355,25 @@ message NamedPort {
 message Instance {
   // Name of the instance
   string name = 1;
-  
+
   // Zone
   Zone zone = 2;
-  
+
   // Machine type
   MachineType machine_type = 3;
-  
+
   // Boot disk image
   string image = 4;
-  
+
   // Network interfaces
   repeated NetworkInterface network_interfaces = 5;
-  
+
   // Service account
   string service_account = 6;
-  
+
   // Metadata
   map<string, string> metadata = 7;
-  
+
   // Tags
   repeated string tags = 8;
 }
@@ -382,19 +382,19 @@ message Instance {
 message LoadBalancer {
   // Name of the load balancer
   string name = 1;
-  
+
   // Type of load balancer
   LoadBalancerType type = 2;
-  
+
   // IP address (reserved IP name)
   string ip = 3;
-  
+
   // Backend service or instance group
   string backend = 4;
-  
+
   // Port range
   string port_range = 5;
-  
+
   // Health check
   HealthCheck health_check = 6;
 }
@@ -403,25 +403,25 @@ message LoadBalancer {
 message HealthCheck {
   // Name
   string name = 1;
-  
+
   // Type (HTTP, HTTPS, TCP, etc.)
   string type = 2;
-  
+
   // Port
   int32 port = 3;
-  
+
   // Request path (for HTTP/HTTPS)
   string request_path = 4;
-  
+
   // Check interval
   int32 check_interval_sec = 5;
-  
+
   // Timeout
   int32 timeout_sec = 6;
-  
+
   // Healthy threshold
   int32 healthy_threshold = 7;
-  
+
   // Unhealthy threshold
   int32 unhealthy_threshold = 8;
 }
@@ -430,10 +430,10 @@ message HealthCheck {
 message Iam {
   // Role bindings
   repeated RoleBinding role_bindings = 1;
-  
+
   // Service accounts
   repeated ServiceAccount service_accounts = 2;
-  
+
   // Custom roles
   repeated CustomRole custom_roles = 3;
 }
@@ -442,10 +442,10 @@ message Iam {
 message RoleBinding {
   // Role name
   string role = 1;
-  
+
   // Members
   repeated string members = 2;
-  
+
   // Condition (optional)
   Condition condition = 3;
 }
@@ -454,10 +454,10 @@ message RoleBinding {
 message Condition {
   // Title
   string title = 1;
-  
+
   // Description
   string description = 2;
-  
+
   // Expression
   string expression = 3;
 }
@@ -466,16 +466,16 @@ message Condition {
 message ServiceAccount {
   // Account ID
   string account_id = 1;
-  
+
   // Display name
   string display_name = 2;
-  
+
   // Description
   string description = 3;
-  
+
   // Roles to assign
   repeated string roles = 4;
-  
+
   // Generate key
   bool generate_key = 5;
 }
@@ -484,16 +484,16 @@ message ServiceAccount {
 message CustomRole {
   // Role ID
   string role_id = 1;
-  
+
   // Title
   string title = 2;
-  
+
   // Description
   string description = 3;
-  
+
   // Permissions
   repeated string permissions = 4;
-  
+
   // Stage (ALPHA, BETA, GA, DEPRECATED)
   string stage = 5;
 }
@@ -508,22 +508,22 @@ message Storage {
 message StorageBucket {
   // Bucket name
   string name = 1;
-  
+
   // Location
   string location = 2;
-  
+
   // Storage class
   string storage_class = 3; // STANDARD, NEARLINE, COLDLINE, ARCHIVE
-  
+
   // Uniform bucket-level access
   bool uniform_bucket_level_access = 4;
-  
+
   // Versioning enabled
   bool versioning = 5;
-  
+
   // Labels
   map<string, string> labels = 6;
-  
+
   // Lifecycle rules
   repeated LifecycleRule lifecycle_rules = 7;
 }
@@ -532,7 +532,7 @@ message StorageBucket {
 message LifecycleRule {
   // Action
   LifecycleAction action = 1;
-  
+
   // Condition
   LifecycleCondition condition = 2;
 }
@@ -541,7 +541,7 @@ message LifecycleRule {
 message LifecycleAction {
   // Type (Delete, SetStorageClass)
   string type = 1;
-  
+
   // Storage class (for SetStorageClass action)
   string storage_class = 2;
 }
@@ -550,10 +550,10 @@ message LifecycleAction {
 message LifecycleCondition {
   // Age in days
   int32 age = 1;
-  
+
   // Creation date before
   string created_before = 2;
-  
+
   // Matches storage class
   repeated string matches_storage_class = 3;
 }

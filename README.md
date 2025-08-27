@@ -332,6 +332,81 @@ See [`examples/advanced.textproto`](examples/advanced.textproto) for an enterpri
 - Multiple storage tiers with lifecycle policies
 - Advanced networking and security
 
+## 🏗️ Architecture
+
+### Core Components
+
+Custoodian follows a modular architecture designed for extensibility and maintainability:
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   CLI Layer     │    │  Validation      │    │   Generation    │
+│                 │    │                  │    │                 │
+│ • Command       │────▶ • Proto         │────▶ • Template      │
+│   Parsing       │    │   Validation     │    │   Processing    │
+│ • Flag          │    │ • Business       │    │ • Resource      │
+│   Handling      │    │   Rules          │    │   Generation    │
+│ • File I/O      │    │ • Cross-refs     │    │ • Optimization  │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                        │                        │
+         │                        │                        │
+         ▼                        ▼                        ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│ Configuration   │    │    Templates     │    │     Output      │
+│                 │    │                  │    │                 │
+│ • Protobuf      │    │ • Built-in       │    │ • Terraform     │
+│   Parsing       │    │ • Local Dir      │    │   Files         │
+│ • Validation    │    │ • Git Repos      │    │ • Validation    │
+│ • Type Safety   │    │ • Caching        │    │ • Dependencies  │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+### Performance Features
+
+- **Template Caching**: Parsed templates are cached in memory with configurable TTL
+- **Concurrent Safety**: Thread-safe template cache with read-write locks
+- **Lazy Loading**: Templates loaded only when needed
+- **Memory Optimization**: Shared template instances across generator instances
+- **Structured Logging**: Comprehensive logging for debugging and monitoring
+
+### Security Model
+
+1. **Input Validation**:
+   - Protocol buffer schema validation
+   - Custom business rule validation
+   - Cross-reference integrity checking
+   - Path traversal prevention
+
+2. **Template Security**:
+   - Git repository allowlist (GitHub, GitLab, Bitbucket)
+   - URL validation and normalization
+   - Secure temporary directory handling
+   - Automatic cleanup of cloned repositories
+
+3. **Output Security**:
+   - File path sanitization
+   - Restrictive file permissions (0600 for files, 0750 for directories)
+   - Sensitive value marking in Terraform outputs
+   - Quote escaping for injection prevention
+
+### Template System
+
+The template system supports multiple sources with automatic failover:
+
+```
+Template Source Priority:
+1. Local Directory (--template-dir)
+2. Git Repository (--template-repo)
+3. Built-in Templates (default)
+
+Template Functions Available:
+• regionToString()      - Convert enums to GCP strings
+• machineTypeToString() - Machine type conversions
+• quote()              - Safe string quoting
+• indent()             - Text formatting
+• unescapeNewlines()   - Script processing
+```
+
 ## 🛠️ Development
 
 ### Prerequisites
@@ -339,6 +414,7 @@ See [`examples/advanced.textproto`](examples/advanced.textproto) for an enterpri
 - Go 1.21+
 - Protocol Buffers compiler (`protoc`)
 - Buf CLI tool
+- Git (for Git repository template loading)
 
 ### Setup
 
@@ -352,31 +428,79 @@ make deps
 # Generate protobuf code
 make proto
 
-# Build
+# Build with optimizations
 make build
 
-# Run tests
+# Run comprehensive tests
 make test
 
-# Format and lint
+# Code quality checks
 make check
+
+# Development build with debug info
+go build -o bin/custoodian-dev -ldflags "-X main.version=dev" ./cmd/custoodian
 ```
 
 ### Project Structure
 
 ```
 custoodian/
-├── cmd/custoodian/          # CLI main package
-├── internal/
-│   ├── cmd/                # CLI commands
-│   ├── generator/          # Terraform generation
-│   ├── templates/          # Template system
-│   └── validator/          # Configuration validation
-├── pkg/config/             # Generated protobuf code
-├── proto/custoodian/        # Protocol buffer schemas
-├── examples/               # Example configurations
-├── templates/gcp/          # Built-in templates
-└── .github/workflows/      # CI/CD workflows
+├── cmd/custoodian/          # CLI main package and entry point
+├── internal/                # Internal packages (not for external use)
+│   ├── cmd/                # CLI command implementations
+│   │   ├── generate.go     # Terraform generation command
+│   │   ├── validate.go     # Configuration validation command
+│   │   ├── schema.go       # Schema export command
+│   │   └── utils.go        # Shared utilities with security features
+│   ├── generator/          # Core Terraform generation engine
+│   │   ├── generator.go    # Main generation logic with caching
+│   │   └── helpers.go      # Template functions and utilities
+│   ├── templates/          # Template loading and management
+│   │   ├── builtin.go      # Embedded templates for all GCP resources
+│   │   └── loader.go       # Multi-source template loading with security
+│   └── validator/          # Configuration validation engine
+│       ├── validator.go    # Comprehensive validation rules
+│       └── validator_test.go # Validation test suite
+├── pkg/config/             # Generated protobuf Go code (public API)
+├── proto/custoodian/        # Protocol buffer schema definitions
+│   ├── config.proto        # Main configuration schema
+│   └── enums.proto         # GCP resource enumerations
+├── examples/               # Example configurations and documentation
+│   ├── simple.textproto    # Basic web application setup
+│   └── advanced.textproto  # Enterprise-grade configuration
+├── templates/gcp/          # Reference templates for customization
+└── .github/workflows/      # CI/CD automation
+    ├── ci.yml             # Continuous integration
+    ├── release.yml        # Release automation
+    └── security.yml       # Security scanning
+```
+
+### Performance Profiling
+
+Enable performance profiling for development:
+
+```bash
+# Build with profiling
+go build -tags profile -o bin/custoodian-profile ./cmd/custoodian
+
+# Generate with CPU profiling
+./bin/custoodian-profile generate config.textproto -cpuprofile=cpu.prof
+
+# Analyze profile
+go tool pprof cpu.prof
+```
+
+### Debugging Template Issues
+
+```bash
+# Enable verbose logging
+CUSTOODIAN_LOG_LEVEL=debug ./bin/custoodian generate config.textproto
+
+# Test custom templates
+custoodian generate config.textproto --template-dir ./debug-templates --dry-run
+
+# Validate template syntax
+custoodian generate --template-dir ./templates --dry-run minimal.textproto
 ```
 
 ### Adding New GCP Resources
