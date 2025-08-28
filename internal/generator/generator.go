@@ -594,8 +594,13 @@ func (g *Generator) generateIAM(iam *config.Iam) (string, error) {
 	
 	// Create template context with dependencies
 	ctx := &TemplateContext{
-		Data:         iam,
-		Dependencies: g.deps,
+		Data: iam,
+		Dependencies: &DependencyInfo{
+			RequiresProjectAPIs:     false,
+			ProjectAPIs:            []string{},
+			RequiresNetworking:     false,
+			NetworkDependencies:    []string{},
+		},
 	}
 	
 	err := g.templates.ExecuteTemplate(&output, "iam.tf", ctx)
