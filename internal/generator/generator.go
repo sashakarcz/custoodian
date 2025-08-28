@@ -231,6 +231,17 @@ func (g *Generator) Generate(cfg *config.Config) (map[string]string, error) {
 		}
 	}
 
+	// Generate database resources (Cloud SQL, Cloud Spanner)
+	if cfg.Databases != nil {
+		content, err := g.generateDatabases(cfg.Databases)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate database configuration: %w", err)
+		}
+		if content != "" {
+			files["databases.tf"] = content
+		}
+	}
+
 	// Generate variables file - always included with default values
 	variables, err := g.generateVariables(cfg)
 	if err != nil {
@@ -670,6 +681,38 @@ func (g *Generator) generateCloudRun(cloudRun *config.CloudRun) (string, error) 
 	err := g.templates.ExecuteTemplate(&output, "cloud_run.tf", ctx)
 	if err != nil {
 		return "", fmt.Errorf("template execution failed for Cloud Run configuration: %w", err)
+	}
+	return output.String(), nil
+}
+
+// generateDatabases generates Terraform configuration for database resources.
+//
+// This includes Cloud SQL instances with comprehensive configuration including
+// storage, networking, backup, high availability, and database/user management.
+// Also supports Cloud Spanner instances with databases and schema definitions.
+//
+// Generated resources:
+//   - google_sql_database_instance for managed relational databases
+//   - google_sql_database for individual databases within instances
+//   - google_sql_user for database users and authentication
+//   - google_spanner_instance for globally distributed databases
+//   - google_spanner_database for Spanner databases with DDL schema
+func (g *Generator) generateDatabases(databases *config.Databases) (string, error) {
+	// Create template context with dependency information
+	ctx := &TemplateContext{
+		Data: databases,
+		Dependencies: &DependencyInfo{
+			RequiresProjectAPIs:     true,
+			ProjectAPIs:            []string{"sqladmin.googleapis.com", "spanner.googleapis.com"},
+			RequiresNetworking:     false, // Database networking is separate from VPC resources
+			NetworkDependencies:    []string{},
+		},
+	}
+	
+	var output strings.Builder
+	err := g.templates.ExecuteTemplate(&output, "databases.tf", ctx)
+	if err != nil {
+		return "", fmt.Errorf("template execution failed for database configuration: %w", err)
 	}
 	return output.String(), nil
 }

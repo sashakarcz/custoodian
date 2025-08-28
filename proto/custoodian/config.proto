@@ -28,6 +28,9 @@ message Config {
 
   // Cloud Run configuration
   CloudRun cloud_run = 7;
+
+  // Database configuration
+  Databases databases = 8;
 }
 
 // Project represents a GCP project configuration
@@ -745,4 +748,235 @@ message CloudRunVpcConnector {
 
   // Max throughput
   int32 max_throughput = 9;
+}
+
+// Database configuration
+message Databases {
+  // Cloud SQL instances
+  repeated CloudSqlInstance cloud_sql_instances = 1;
+
+  // Cloud Spanner instances
+  repeated CloudSpannerInstance cloud_spanner_instances = 2;
+}
+
+// Cloud SQL instance configuration
+message CloudSqlInstance {
+  // Instance name
+  string name = 1;
+
+  // Database engine (MYSQL, POSTGRES, SQL_SERVER)
+  string database_version = 2;
+
+  // Region
+  Region region = 3;
+
+  // Instance tier (machine type)
+  string tier = 4;
+
+  // Storage configuration
+  CloudSqlStorage storage = 5;
+
+  // Network configuration
+  CloudSqlNetwork network = 6;
+
+  // Backup configuration
+  CloudSqlBackup backup = 7;
+
+  // High availability configuration
+  CloudSqlHa high_availability = 8;
+
+  // Maintenance window
+  CloudSqlMaintenance maintenance = 9;
+
+  // Database flags
+  map<string, string> database_flags = 10;
+
+  // Labels
+  map<string, string> labels = 11;
+
+  // Databases to create
+  repeated CloudSqlDatabase databases = 12;
+
+  // Users to create
+  repeated CloudSqlUser users = 13;
+
+  // Deletion protection
+  bool deletion_protection = 14;
+
+  // Root password (optional)
+  string root_password = 15;
+}
+
+// Cloud SQL storage configuration
+message CloudSqlStorage {
+  // Storage type (SSD or HDD)
+  string type = 1;
+
+  // Storage size in GB
+  int32 size_gb = 2;
+
+  // Auto resize
+  bool auto_resize = 3;
+
+  // Auto resize limit
+  int32 auto_resize_limit = 4;
+}
+
+// Cloud SQL network configuration
+message CloudSqlNetwork {
+  // Authorized networks
+  repeated CloudSqlAuthorizedNetwork authorized_networks = 1;
+
+  // Private IP configuration
+  CloudSqlPrivateIp private_network = 2;
+
+  // SSL configuration
+  CloudSqlSsl ssl = 3;
+
+  // Public IP enabled
+  bool ipv4_enabled = 4;
+}
+
+// Authorized network for Cloud SQL
+message CloudSqlAuthorizedNetwork {
+  // Network name
+  string name = 1;
+
+  // CIDR block
+  string value = 2;
+
+  // Expiration time (optional)
+  string expiration_time = 3;
+}
+
+// Private IP configuration
+message CloudSqlPrivateIp {
+  // Private network name
+  string private_network = 1;
+
+  // Allocated IP range
+  string allocated_ip_range = 2;
+}
+
+// SSL configuration
+message CloudSqlSsl {
+  // SSL mode (ALLOW, ENCRYPTED_ONLY, TRUSTED_CLIENT_CERTIFICATE_REQUIRED)
+  string ssl_mode = 1;
+
+  // Require SSL
+  bool require_ssl = 2;
+}
+
+// Backup configuration
+message CloudSqlBackup {
+  // Backup enabled
+  bool enabled = 1;
+
+  // Backup start time (HH:MM format)
+  string start_time = 2;
+
+  // Point in time recovery
+  bool point_in_time_recovery_enabled = 3;
+
+  // Transaction log retention days
+  int32 transaction_log_retention_days = 4;
+
+  // Backup location
+  string location = 5;
+}
+
+// High availability configuration
+message CloudSqlHa {
+  // HA enabled
+  bool enabled = 1;
+
+  // HA type (REGIONAL, ZONAL)
+  string type = 2;
+}
+
+// Maintenance window
+message CloudSqlMaintenance {
+  // Day of week (1-7, Monday is 1)
+  int32 day = 1;
+
+  // Hour (0-23)
+  int32 hour = 2;
+
+  // Update track (canary or stable)
+  string update_track = 3;
+}
+
+// Cloud SQL database
+message CloudSqlDatabase {
+  // Database name
+  string name = 1;
+
+  // Character set (MySQL only)
+  string charset = 2;
+
+  // Collation
+  string collation = 3;
+}
+
+// Cloud SQL user
+message CloudSqlUser {
+  // User name
+  string name = 1;
+
+  // User password
+  string password = 2;
+
+  // Host (MySQL only)
+  string host = 3;
+
+  // User type (BUILT_IN, CLOUD_IAM_USER, CLOUD_IAM_SERVICE_ACCOUNT)
+  string type = 4;
+}
+
+// Cloud Spanner instance configuration
+message CloudSpannerInstance {
+  // Instance name
+  string name = 1;
+
+  // Instance configuration (regional or multi-regional)
+  string config = 2;
+
+  // Display name
+  string display_name = 3;
+
+  // Number of nodes (for node-based billing)
+  int32 node_count = 4;
+
+  // Processing units (for processing unit billing)
+  int32 processing_units = 5;
+
+  // Labels
+  map<string, string> labels = 6;
+
+  // Databases
+  repeated CloudSpannerDatabase databases = 7;
+
+  // Force deletion (bypass deletion protection)
+  bool force_destroy = 8;
+}
+
+// Cloud Spanner database configuration
+message CloudSpannerDatabase {
+  // Database name
+  string name = 1;
+
+  // DDL statements for schema creation
+  repeated string ddl = 2;
+
+  // Deletion protection
+  bool deletion_protection = 3;
+
+  // Database dialect (GOOGLE_STANDARD_SQL or POSTGRESQL)
+  string database_dialect = 4;
+
+  // Enable drop protection
+  bool enable_drop_protection = 5;
+
+  // Version retention period
+  string version_retention_period = 6;
 }

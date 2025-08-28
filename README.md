@@ -11,7 +11,7 @@ Custoodian leverages Protocol Buffers for strong typing and validation, catching
 ## ✨ Features
 
 - **Protocol Buffer-based Configuration**: Type-safe infrastructure definitions with compile-time validation
-- **Comprehensive GCP Support**: Full coverage of GCP resources including compute, networking, storage, Cloud Run, and IAM
+- **Comprehensive GCP Support**: Full coverage of GCP resources including compute, networking, storage, Cloud Run, databases, and IAM
 - **Template System**: Built-in templates with support for custom template directories and Git repositories
 - **Rich Validation**: Extensive validation rules using proto-validate extensions
 - **CLI Tool**: Fast, standalone binary that works locally or in CI/CD pipelines
@@ -191,6 +191,90 @@ This generates Cloud Run services with:
 - **IAM Access Control**: Service-level permissions
 - **VPC Connectivity**: Private networking with VPC Access Connectors
 
+### Database Example
+
+For managed database services, Custoodian supports both Cloud SQL and Cloud Spanner:
+
+```protobuf
+project {
+  id: "my-database-app"
+  billing_account: "123456-ABCDEF-GHIJKL"
+  apis: [GCP_API_SQL_ADMIN, GCP_API_SPANNER, GCP_API_IAM]
+}
+
+databases {
+  # Cloud SQL for transactional workloads
+  cloud_sql_instances {
+    name: "main-postgres"
+    database_version: "POSTGRES_14"
+    region: REGION_US_CENTRAL1
+    tier: "db-f1-micro"
+    
+    storage {
+      type: "SSD"
+      size_gb: 20
+      auto_resize: true
+    }
+    
+    backup {
+      enabled: true
+      start_time: "03:00"
+      point_in_time_recovery_enabled: true
+    }
+    
+    high_availability {
+      enabled: true
+      type: "REGIONAL"
+    }
+    
+    network {
+      ipv4_enabled: true
+      authorized_networks {
+        name: "office"
+        value: "203.0.113.0/24"
+      }
+      ssl {
+        require_ssl: true
+      }
+    }
+    
+    databases {
+      name: "app_production"
+    }
+    
+    users {
+      name: "app_user"
+      password: "secure-password"
+      type: "BUILT_IN"
+    }
+  }
+  
+  # Cloud Spanner for global scale
+  cloud_spanner_instances {
+    name: "global-spanner"
+    config: "regional-us-central1"
+    processing_units: 1000
+    
+    databases {
+      name: "user-data"
+      database_dialect: "GOOGLE_STANDARD_SQL"
+      
+      ddl: [
+        "CREATE TABLE Users (UserId STRING(36) NOT NULL, Email STRING(255) NOT NULL) PRIMARY KEY (UserId)",
+        "CREATE UNIQUE INDEX UniqueEmail ON Users(Email)"
+      ]
+    }
+  }
+}
+```
+
+This generates database infrastructure with:
+- **Cloud SQL**: Managed PostgreSQL/MySQL with HA, backups, and SSL
+- **Cloud Spanner**: Globally distributed database with schema definitions
+- **Security**: Network restrictions, SSL encryption, IAM integration
+- **Operations**: Automated backups, maintenance windows, monitoring
+- **Scalability**: Auto-resize storage, processing unit allocation
+
 ## 📖 Documentation
 
 ### Protocol Buffer Schema
@@ -204,6 +288,7 @@ Custoodian uses Protocol Buffers to define infrastructure configurations. The ma
 - `Iam`: Service accounts, role bindings, custom roles
 - `Storage`: Cloud Storage buckets with lifecycle policies
 - `CloudRun`: Containerized services, VPC connectors, IAM bindings
+- `Databases`: Cloud SQL instances and databases, Cloud Spanner instances and schemas
 
 ### Field Validation
 
@@ -297,6 +382,7 @@ my-templates/
 ├── iam.tf
 ├── storage.tf
 ├── cloud_run.tf
+├── databases.tf
 ├── variables.tf
 └── outputs.tf
 ```
@@ -324,6 +410,7 @@ Each template file corresponds to a specific resource type and receives structur
 | `iam.tf` | `*config.Iam` | Service accounts, role bindings |
 | `storage.tf` | `*config.Storage` | Cloud Storage buckets |
 | `cloud_run.tf` | `TemplateContext{Data: *config.CloudRun}` | Containerized services, VPC connectors |
+| `databases.tf` | `TemplateContext{Data: *config.Databases}` | Cloud SQL instances, Spanner instances |
 | `variables.tf` | `*config.Config` | Terraform input variables |
 | `outputs.tf` | `*config.Config` | Terraform output values |
 

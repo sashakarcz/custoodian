@@ -1,0 +1,232 @@
+project {
+  id: "custoodian-databases-demo"
+  name: "Database Services Demo"
+  billing_account: "01EFB4-27DC88-8C3A31"
+  apis: [
+    GCP_API_SQL_ADMIN,
+    GCP_API_SPANNER,
+    GCP_API_IAM,
+    GCP_API_RESOURCE_MANAGER
+  ]
+}
+
+databases {
+  # Cloud SQL Instances
+  cloud_sql_instances {
+    name: "main-postgres"
+    database_version: "POSTGRES_14"
+    region: REGION_US_CENTRAL1
+    tier: "db-f1-micro"
+    deletion_protection: false
+    
+    storage {
+      type: "SSD"
+      size_gb: 20
+      auto_resize: true
+      auto_resize_limit: 100
+    }
+    
+    network {
+      ipv4_enabled: true
+      authorized_networks {
+        name: "office-network"
+        value: "203.0.113.0/24"
+      }
+      authorized_networks {
+        name: "home-office"
+        value: "198.51.100.0/24"
+      }
+      ssl {
+        require_ssl: true
+        ssl_mode: "ENCRYPTED_ONLY"
+      }
+    }
+    
+    backup {
+      enabled: true
+      start_time: "03:00"
+      point_in_time_recovery_enabled: true
+      transaction_log_retention_days: 7
+      location: "us-central1"
+    }
+    
+    high_availability {
+      enabled: true
+      type: "REGIONAL"
+    }
+    
+    maintenance {
+      day: 2
+      hour: 3
+      update_track: "stable"
+    }
+    
+    database_flags: {
+      key: "max_connections"
+      value: "100"
+    }
+    database_flags: {
+      key: "shared_preload_libraries"
+      value: "pg_stat_statements"
+    }
+    
+    labels: {
+      key: "environment"
+      value: "production"
+    }
+    labels: {
+      key: "team"
+      value: "backend"
+    }
+    
+    databases {
+      name: "app_production"
+      collation: "en_US.UTF8"
+    }
+    databases {
+      name: "analytics"
+      collation: "en_US.UTF8"
+    }
+    
+    users {
+      name: "app_user"
+      password: "secure-app-password-123"
+      type: "BUILT_IN"
+    }
+    users {
+      name: "readonly_user"
+      password: "readonly-password-456"
+      type: "BUILT_IN"
+    }
+  }
+  
+  cloud_sql_instances {
+    name: "legacy-mysql"
+    database_version: "MYSQL_8_0"
+    region: REGION_US_EAST1
+    tier: "db-n1-standard-1"
+    deletion_protection: true
+    
+    storage {
+      type: "SSD"
+      size_gb: 50
+      auto_resize: true
+      auto_resize_limit: 500
+    }
+    
+    network {
+      ipv4_enabled: false
+      private_network {
+        private_network: "projects/custoodian-databases-demo/global/networks/default"
+        allocated_ip_range: "google-managed-services-default"
+      }
+    }
+    
+    backup {
+      enabled: true
+      start_time: "02:00"
+      point_in_time_recovery_enabled: true
+      location: "us-east1"
+    }
+    
+    database_flags: {
+      key: "innodb_buffer_pool_size"
+      value: "134217728"
+    }
+    
+    labels: {
+      key: "environment"
+      value: "production"
+    }
+    labels: {
+      key: "legacy"
+      value: "true"
+    }
+    
+    databases {
+      name: "legacy_app"
+      charset: "utf8mb4"
+      collation: "utf8mb4_unicode_ci"
+    }
+    
+    users {
+      name: "legacy_user"
+      password: "legacy-secure-password"
+      host: "%"
+      type: "BUILT_IN"
+    }
+  }
+  
+  # Cloud Spanner Instances
+  cloud_spanner_instances {
+    name: "global-spanner"
+    config: "regional-us-central1"
+    display_name: "Global Application Database"
+    processing_units: 1000
+    force_destroy: false
+    
+    labels: {
+      key: "environment"
+      value: "production"
+    }
+    labels: {
+      key: "application"
+      value: "global-app"
+    }
+    
+    databases {
+      name: "user-profiles"
+      database_dialect: "GOOGLE_STANDARD_SQL"
+      deletion_protection: true
+      enable_drop_protection: true
+      version_retention_period: "7d"
+      
+      ddl: [
+        "CREATE TABLE Users (UserId STRING(36) NOT NULL, Email STRING(255) NOT NULL, Name STRING(100), CreatedAt TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true)) PRIMARY KEY (UserId)",
+        "CREATE UNIQUE INDEX UniqueEmail ON Users(Email)",
+        "CREATE TABLE UserSessions (SessionId STRING(36) NOT NULL, UserId STRING(36) NOT NULL, CreatedAt TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true), ExpiresAt TIMESTAMP NOT NULL) PRIMARY KEY (SessionId)",
+        "ALTER TABLE UserSessions ADD CONSTRAINT FK_UserSessions_Users FOREIGN KEY (UserId) REFERENCES Users (UserId)"
+      ]
+    }
+    
+    databases {
+      name: "analytics"
+      database_dialect: "GOOGLE_STANDARD_SQL"
+      deletion_protection: false
+      version_retention_period: "3d"
+      
+      ddl: [
+        "CREATE TABLE Events (EventId STRING(36) NOT NULL, UserId STRING(36), EventType STRING(50) NOT NULL, EventData JSON, Timestamp TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true)) PRIMARY KEY (EventId)",
+        "CREATE INDEX EventsByUser ON Events(UserId, Timestamp DESC)",
+        "CREATE INDEX EventsByType ON Events(EventType, Timestamp DESC)"
+      ]
+    }
+  }
+  
+  cloud_spanner_instances {
+    name: "regional-spanner"
+    config: "regional-us-west2"
+    display_name: "Regional Cache Database"
+    node_count: 1
+    force_destroy: true
+    
+    labels: {
+      key: "environment"
+      value: "staging"
+    }
+    labels: {
+      key: "purpose"
+      value: "cache"
+    }
+    
+    databases {
+      name: "cache"
+      database_dialect: "GOOGLE_STANDARD_SQL"
+      deletion_protection: false
+      
+      ddl: [
+        "CREATE TABLE CacheEntries (CacheKey STRING(255) NOT NULL, CacheValue STRING(MAX), ExpiresAt TIMESTAMP, CreatedAt TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true)) PRIMARY KEY (CacheKey)"
+      ]
+    }
+  }
+}
