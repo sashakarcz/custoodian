@@ -271,6 +271,7 @@ resource "google_compute_router_nat" "{{ .Name }}" {
   {{- end}}
   
   {{- if .SourceSubnetworkIpRangesToNat}}
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
   {{- range .SourceSubnetworkIpRangesToNat}}
   subnetwork {
     name                    = {{ quote .Name }}
