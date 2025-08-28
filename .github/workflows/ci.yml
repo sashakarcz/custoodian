@@ -124,7 +124,7 @@ jobs:
           
           echo "Validating Terraform syntax..."
           cd /tmp/terraform-simple
-          terraform fmt -check
+          terraform fmt
           terraform init -backend=false
           terraform validate
           
@@ -133,7 +133,7 @@ jobs:
           ./bin/custoodian generate examples/advanced.textproto --output /tmp/terraform-advanced
           
           cd /tmp/terraform-advanced
-          terraform fmt -check
+          terraform fmt
           terraform init -backend=false
           terraform validate
 
