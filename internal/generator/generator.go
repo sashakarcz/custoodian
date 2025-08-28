@@ -591,7 +591,14 @@ func (g *Generator) generateLoadBalancers(lbs []*config.LoadBalancer) (string, e
 //   - google_project_iam_custom_role for custom role definitions
 func (g *Generator) generateIAM(iam *config.Iam) (string, error) {
 	var output strings.Builder
-	err := g.templates.ExecuteTemplate(&output, "iam.tf", iam)
+	
+	// Create template context with dependencies
+	ctx := &TemplateContext{
+		Data:         iam,
+		Dependencies: g.deps,
+	}
+	
+	err := g.templates.ExecuteTemplate(&output, "iam.tf", ctx)
 	if err != nil {
 		return "", fmt.Errorf("template execution failed for IAM configuration: %w", err)
 	}
