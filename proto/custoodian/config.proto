@@ -25,6 +25,9 @@ message Config {
 
   // Storage configuration
   Storage storage = 6;
+
+  // Cloud Run configuration
+  CloudRun cloud_run = 7;
 }
 
 // Project represents a GCP project configuration
@@ -556,4 +559,190 @@ message LifecycleCondition {
 
   // Matches storage class
   repeated string matches_storage_class = 3;
+}
+
+// Cloud Run configuration
+message CloudRun {
+  // Cloud Run services
+  repeated CloudRunService services = 1;
+
+  // VPC Access Connectors
+  repeated CloudRunVpcConnector vpc_connectors = 2;
+}
+
+// Cloud Run service configuration
+message CloudRunService {
+  // Service name
+  string name = 1;
+
+  // Service description
+  string description = 2;
+
+  // Location (region for Cloud Run)
+  Region location = 3;
+
+  // Container image
+  string image = 4;
+
+  // Service configuration
+  CloudRunServiceConfig config = 5;
+
+  // Traffic configuration
+  repeated CloudRunTraffic traffic = 6;
+
+  // Labels
+  map<string, string> labels = 7;
+
+  // Annotations
+  map<string, string> annotations = 8;
+
+  // IAM bindings
+  repeated CloudRunIamBinding iam_bindings = 9;
+}
+
+// Cloud Run service configuration
+message CloudRunServiceConfig {
+  // Container port
+  int32 port = 1;
+
+  // Environment variables
+  map<string, string> env_vars = 2;
+
+  // Environment variables from secrets
+  repeated CloudRunEnvFromSecret env_from_secrets = 3;
+
+  // CPU allocation
+  string cpu = 4;
+
+  // Memory allocation
+  string memory = 5;
+
+  // Maximum number of instances
+  int32 max_instances = 6;
+
+  // Minimum number of instances  
+  int32 min_instances = 7;
+
+  // Maximum concurrent requests per instance
+  int32 max_concurrent_requests = 8;
+
+  // Request timeout in seconds
+  int32 timeout_seconds = 9;
+
+  // Service account email
+  string service_account = 10;
+
+  // Volume mounts
+  repeated CloudRunVolumeMount volume_mounts = 11;
+
+  // VPC connector
+  string vpc_connector = 12;
+
+  // CPU throttling
+  bool cpu_throttling = 13;
+
+  // Startup CPU boost
+  bool startup_cpu_boost = 14;
+
+  // Execution environment (EXECUTION_ENVIRONMENT_GEN1 or EXECUTION_ENVIRONMENT_GEN2)
+  string execution_environment = 15;
+}
+
+// Environment variable from secret
+message CloudRunEnvFromSecret {
+  // Environment variable name
+  string name = 1;
+
+  // Secret name
+  string secret_name = 2;
+
+  // Secret version
+  string version = 3;
+}
+
+// Volume mount configuration
+message CloudRunVolumeMount {
+  // Mount name
+  string name = 1;
+
+  // Mount path
+  string mount_path = 2;
+
+  // Secret configuration
+  CloudRunSecretVolume secret = 3;
+}
+
+// Secret volume configuration
+message CloudRunSecretVolume {
+  // Secret name
+  string secret_name = 1;
+
+  // Items to mount from secret
+  repeated CloudRunSecretItem items = 2;
+}
+
+// Secret item configuration  
+message CloudRunSecretItem {
+  // Secret key
+  string key = 1;
+
+  // File path within mount
+  string path = 2;
+
+  // File mode (optional)
+  int32 mode = 3;
+}
+
+// Traffic configuration for Cloud Run service
+message CloudRunTraffic {
+  // Revision name (optional, defaults to latest)
+  string revision_name = 1;
+
+  // Percentage of traffic (0-100)
+  int32 percent = 2;
+
+  // Tag for this traffic split (optional)
+  string tag = 3;
+}
+
+// IAM binding for Cloud Run service
+message CloudRunIamBinding {
+  // IAM role
+  string role = 1;
+
+  // Members (users, service accounts, groups)
+  repeated string members = 2;
+
+  // Condition (optional)
+  Condition condition = 3;
+}
+
+// VPC connector for Cloud Run
+message CloudRunVpcConnector {
+  // Connector name
+  string name = 1;
+
+  // VPC network
+  string network = 2;
+
+  // Subnet
+  string subnet = 3;
+
+  // IP CIDR range
+  string ip_cidr_range = 4;
+
+  // Machine type
+  string machine_type = 5;
+
+  // Min instances
+  int32 min_instances = 6;
+
+  // Max instances
+  int32 max_instances = 7;
+
+  // Min throughput
+  int32 min_throughput = 8;
+
+  // Max throughput
+  int32 max_throughput = 9;
 }

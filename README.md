@@ -11,7 +11,7 @@ Custoodian leverages Protocol Buffers for strong typing and validation, catching
 ## ✨ Features
 
 - **Protocol Buffer-based Configuration**: Type-safe infrastructure definitions with compile-time validation
-- **Comprehensive GCP Support**: Full coverage of GCP resources including compute, networking, storage, and IAM
+- **Comprehensive GCP Support**: Full coverage of GCP resources including compute, networking, storage, Cloud Run, and IAM
 - **Template System**: Built-in templates with support for custom template directories and Git repositories
 - **Rich Validation**: Extensive validation rules using proto-validate extensions
 - **CLI Tool**: Fast, standalone binary that works locally or in CI/CD pipelines
@@ -125,6 +125,72 @@ terraform plan
 terraform apply
 ```
 
+### Cloud Run Example
+
+For serverless containerized applications, Custoodian supports comprehensive Cloud Run configuration:
+
+```protobuf
+project {
+  id: "my-serverless-app"
+  billing_account: "123456-ABCDEF-GHIJKL"
+  apis: [GCP_API_CLOUD_RUN, GCP_API_VPC_ACCESS, GCP_API_IAM]
+}
+
+cloud_run {
+  services {
+    name: "hello-world"
+    description: "Simple web service"
+    location: REGION_US_CENTRAL1
+    image: "gcr.io/my-project/hello-world:latest"
+    
+    config {
+      port: 8080
+      cpu: "1000m"
+      memory: "512Mi"
+      max_instances: 100
+      min_instances: 0
+      max_concurrent_requests: 80
+      timeout_seconds: 300
+      
+      env_vars: {
+        key: "NODE_ENV"
+        value: "production"
+      }
+      
+      env_from_secrets {
+        name: "DATABASE_URL"
+        secret_name: "db-connection"
+        version: "latest"
+      }
+    }
+    
+    traffic {
+      percent: 100
+    }
+    
+    iam_bindings {
+      role: "roles/run.invoker"
+      members: ["allUsers"]
+    }
+  }
+  
+  vpc_connectors {
+    name: "serverless-vpc-connector"
+    network: "default"
+    ip_cidr_range: "10.8.0.0/28"
+    min_instances: 2
+    max_instances: 10
+  }
+}
+```
+
+This generates Cloud Run services with:
+- **Resource Limits**: CPU, memory, and scaling configuration
+- **Environment Variables**: From values and Google Secret Manager
+- **Traffic Management**: Blue/green deployments with percentage splits
+- **IAM Access Control**: Service-level permissions
+- **VPC Connectivity**: Private networking with VPC Access Connectors
+
 ## 📖 Documentation
 
 ### Protocol Buffer Schema
@@ -137,6 +203,7 @@ Custoodian uses Protocol Buffers to define infrastructure configurations. The ma
 - `LoadBalancer`: HTTP/HTTPS/TCP load balancers with health checks
 - `Iam`: Service accounts, role bindings, custom roles
 - `Storage`: Cloud Storage buckets with lifecycle policies
+- `CloudRun`: Containerized services, VPC connectors, IAM bindings
 
 ### Field Validation
 
@@ -229,6 +296,7 @@ my-templates/
 ├── load_balancers.tf
 ├── iam.tf
 ├── storage.tf
+├── cloud_run.tf
 ├── variables.tf
 └── outputs.tf
 ```
@@ -237,6 +305,337 @@ my-templates/
 
 ```bash
 custoodian generate config.textproto --template-repo github.com/myorg/gcp-templates
+```
+
+## 📝 Creating Custom Templates
+
+Custom templates allow you to customize the generated Terraform code to match your organization's standards, naming conventions, and specific requirements.
+
+### Template Structure
+
+Each template file corresponds to a specific resource type and receives structured data from the Protocol Buffer configuration:
+
+| Template File | Data Type | Purpose |
+|---------------|-----------|---------|
+| `project.tf` | `*config.Project` | GCP project, provider, APIs |
+| `networking.tf` | `TemplateContext{Data: *config.Networking}` | VPCs, subnets, firewall rules |
+| `compute.tf` | `TemplateContext{Data: *config.Compute}` | VMs, instance groups, templates |
+| `load_balancers.tf` | `[]*config.LoadBalancer` | Load balancers, health checks |
+| `iam.tf` | `*config.Iam` | Service accounts, role bindings |
+| `storage.tf` | `*config.Storage` | Cloud Storage buckets |
+| `cloud_run.tf` | `TemplateContext{Data: *config.CloudRun}` | Containerized services, VPC connectors |
+| `variables.tf` | `*config.Config` | Terraform input variables |
+| `outputs.tf` | `*config.Config` | Terraform output values |
+
+### Template Context System
+
+Templates that support dependency management receive a `TemplateContext` object:
+
+```go
+type TemplateContext struct {
+    Data         interface{}      // The actual resource data
+    Dependencies *DependencyInfo  // Dependency metadata
+}
+
+type DependencyInfo struct {
+    RequiresProjectAPIs bool     // Whether APIs need to be enabled first
+    ProjectAPIs         []string // List of required API services
+    RequiresNetworking  bool     // Whether networking resources are needed
+    NetworkDependencies []string // Network resource references
+}
+```
+
+### Available Template Functions
+
+Custoodian provides helper functions for common operations:
+
+```go
+// String manipulation
+quote(s string) string              // Safely quote strings
+indent(spaces int, text string)     // Indent text blocks
+unescapeNewlines(s string) string   // Process startup scripts
+
+// GCP-specific conversions
+regionToString(region Region) string           // Convert region enum
+zoneToString(zone Zone) string                // Convert zone enum  
+machineTypeToString(mt MachineType) string    // Convert machine type
+networkTierToString(nt NetworkTier) string    // Convert network tier
+```
+
+### Example: Custom Networking Template
+
+Here's how to create a custom networking template with organization-specific patterns:
+
+```hcl
+# networking.tf
+{{- $data := .Data -}}
+{{- $deps := .Dependencies -}}
+
+# Organization: ACME Corp
+# Template Version: 2.1
+# Generated: {{ "{{ .TimeStamp }}" }}
+
+{{- if $data.Vpcs}}
+# VPC Networks
+{{- range $data.Vpcs}}
+resource "google_compute_network" "{{ .Name }}" {
+  name                    = "acme-{{ .Name }}-{{ "{{ var.environment }}" }}"
+  description             = "{{ .Description }} - Managed by Custoodian"
+  auto_create_subnetworks = {{ .AutoCreateSubnetworks }}
+  routing_mode            = {{ quote (upper .RoutingMode) }}
+  
+  {{- if $deps.RequiresProjectAPIs}}
+  depends_on = [
+    {{- range $i, $api := $deps.ProjectAPIs}}
+    {{- if $i}},{{end}}
+    google_project_service.{{ $api | replace "." "_" }}
+    {{- end}}
+  ]
+  {{- end}}
+
+  # ACME Corp standard labels
+  labels = {
+    environment    = var.environment
+    cost_center    = var.cost_center
+    managed_by     = "custoodian"
+    creation_date  = "{{ "{{ formatdate("YYYY-MM-DD", timestamp()) }}" }}"
+    {{- if .Labels}}
+    {{- range $key, $value := .Labels}}
+    {{ quote $key }} = {{ quote $value }}
+    {{- end}}
+    {{- end}}
+  }
+}
+
+{{- if .Subnets}}
+# Subnets for {{ .Name }}
+{{- range .Subnets}}
+resource "google_compute_subnetwork" "{{ .Name }}" {
+  name          = "acme-{{ .Name }}-{{ "{{ var.environment }}" }}"
+  description   = "{{ .Description }} - Auto-managed"
+  ip_cidr_range = {{ quote .Cidr }}
+  region        = {{ quote (regionToString .Region) }}
+  network       = google_compute_network.{{ $.Name }}.id
+  
+  # ACME Corp requires private Google access
+  private_ip_google_access = true
+  
+  log_config {
+    aggregation_interval = "INTERVAL_10_MIN"
+    flow_sampling        = 0.5
+    metadata             = "INCLUDE_ALL_METADATA"
+  }
+}
+{{- end}}
+{{- end}}
+{{- end}}
+{{- end}}
+
+# Organization-wide firewall rules
+resource "google_compute_firewall" "acme_deny_all" {
+  name        = "acme-deny-all-{{ "{{ var.environment }}" }}"
+  description = "ACME Corp security baseline - deny all by default"
+  network     = google_compute_network.{{ (index $data.Vpcs 0).Name }}.name
+  direction   = "INGRESS"
+  priority    = 65534
+
+  deny {
+    protocol = "all"
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+}
+```
+
+### Example: Custom Variables Template
+
+Create standardized variables for your organization:
+
+```hcl
+# variables.tf
+# ACME Corp Standard Variables
+# Generated by Custoodian
+
+variable "project_id" {
+  description = "The GCP project ID"
+  type        = string
+  
+  validation {
+    condition     = can(regex("^acme-", var.project_id))
+    error_message = "Project ID must start with 'acme-' prefix."
+  }
+}
+
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+  default     = "dev"
+  
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be dev, staging, or prod."
+  }
+}
+
+variable "cost_center" {
+  description = "Cost center for billing allocation"
+  type        = string
+  
+  validation {
+    condition     = can(regex("^CC-[0-9]{4}$", var.cost_center))
+    error_message = "Cost center must match format CC-NNNN."
+  }
+}
+
+variable "region" {
+  description = "Default GCP region"
+  type        = string
+  default     = "us-central1"
+}
+
+variable "zone" {
+  description = "Default GCP zone" 
+  type        = string
+  default     = "us-central1-a"
+}
+
+# Dynamic variables based on configuration
+{{- if .Networking}}
+{{- if .Networking.Vpcs}}
+variable "vpc_cidrs" {
+  description = "CIDR blocks for VPC networks"
+  type        = map(string)
+  default = {
+    {{- range .Networking.Vpcs}}
+    {{- if .Subnets}}
+    {{- range .Subnets}}
+    "{{ .Name }}" = {{ quote .Cidr }}
+    {{- end}}
+    {{- end}}
+    {{- end}}
+  }
+}
+{{- end}}
+{{- end}}
+```
+
+### Template Development Workflow
+
+1. **Start with built-in templates**: Copy the built-in templates as a starting point
+```bash
+# View built-in template (use this as reference)
+custoodian generate --dry-run config.textproto
+```
+
+2. **Create template directory**: Set up your custom template directory
+```bash
+mkdir ./my-templates
+cd my-templates
+```
+
+3. **Develop iteratively**: Test changes frequently
+```bash
+# Test template changes
+custoodian generate config.textproto --template-dir ./my-templates --dry-run
+
+# Generate to files when satisfied
+custoodian generate config.textproto --template-dir ./my-templates -o ./output
+```
+
+4. **Validate output**: Always validate generated Terraform
+```bash
+cd ./output
+terraform init
+terraform validate
+terraform plan
+```
+
+### Advanced Template Patterns
+
+#### Conditional Resource Creation
+```hcl
+{{- if .EnableMonitoring}}
+resource "google_monitoring_alert_policy" "high_cpu" {
+  display_name = "High CPU Usage"
+  # ... monitoring configuration
+}
+{{- end}}
+```
+
+#### Loop with Complex Logic
+```hcl
+{{- range .Instances}}
+{{- $instance := . }}
+resource "google_compute_instance" "{{ .Name }}" {
+  name = {{ quote .Name }}
+  
+  {{- if .NetworkInterfaces}}
+  {{- range .NetworkInterfaces}}
+  network_interface {
+    {{- if .Network}}
+    # Use resource reference for networks defined in this config
+    {{- $networkFound := false }}
+    {{- range $data.Vpcs }}
+      {{- if eq .Name $.Network }}{{- $networkFound = true }}{{- end }}
+    {{- end }}
+    {{- if $networkFound }}
+    network = google_compute_network.{{ .Network }}.id
+    {{- else }}
+    network = {{ quote .Network }}
+    {{- end }}
+    {{- end}}
+  }
+  {{- end}}
+  {{- end}}
+  
+  {{- if $deps.RequiresNetworking}}
+  depends_on = [
+    {{- range $deps.NetworkDependencies}}
+    {{ . }},
+    {{- end}}
+  ]
+  {{- end}}
+}
+{{- end}}
+```
+
+#### Organization Policies
+```hcl
+# Add organization-specific resources
+resource "google_project_organization_policy" "restrict_vm_external_ips" {
+  project    = var.project_id
+  constraint = "compute.vmExternalIpAccess"
+
+  list_policy {
+    deny {
+      all = true
+    }
+  }
+}
+```
+
+### Best Practices
+
+1. **Use Template Comments**: Document your template logic
+2. **Validate Input**: Add validation blocks to variables
+3. **Follow Naming Conventions**: Use consistent resource naming
+4. **Handle Edge Cases**: Check for empty values and optional fields
+5. **Test Thoroughly**: Validate generated Terraform in multiple scenarios
+6. **Version Control**: Keep templates in Git with proper versioning
+7. **Use Dependencies**: Leverage the dependency system for proper resource ordering
+
+### Troubleshooting Templates
+
+```bash
+# Debug template execution
+CUSTOODIAN_LOG_LEVEL=debug custoodian generate config.textproto --template-dir ./templates
+
+# Test specific template
+custoodian generate config.textproto --template-dir ./templates --dry-run | grep -A 20 "networking.tf"
+
+# Validate template syntax
+custoodian generate test-config.textproto --template-dir ./templates -o /tmp/test-output
+cd /tmp/test-output && terraform validate
 ```
 
 ### GitHub Action
@@ -406,6 +805,43 @@ Template Functions Available:
 • indent()             - Text formatting
 • unescapeNewlines()   - Script processing
 ```
+
+#### Dependency Management
+
+Custoodian automatically handles Terraform resource dependencies to prevent race conditions and timing issues:
+
+**Project API Dependencies**: Networking and compute resources automatically depend on Google Cloud APIs being enabled:
+```hcl
+resource "google_compute_network" "vpc" {
+  # Automatically waits for APIs
+  depends_on = [google_project_service.api_0]
+}
+```
+
+**Network Dependencies**: Compute resources automatically depend on networking resources:
+```hcl
+resource "google_compute_instance" "vm" {
+  # Automatically references and depends on network
+  depends_on = [
+    google_compute_network.vpc,
+    google_project_service.api_0
+  ]
+}
+```
+
+**Resource References**: Built-in templates automatically use proper Terraform resource references instead of string names where appropriate:
+```hcl
+# Firewall rules reference VPC resources
+resource "google_compute_firewall" "rule" {
+  network = google_compute_network.vpc.name  # Not just "vpc"
+}
+```
+
+This ensures that:
+- Resources are created in the correct order
+- API services are enabled before dependent resources
+- Cross-resource references use proper Terraform syntax
+- Manual dependency management is not required
 
 ## 🛠️ Development
 

@@ -220,6 +220,17 @@ func (g *Generator) Generate(cfg *config.Config) (map[string]string, error) {
 		}
 	}
 
+	// Generate Cloud Run resources (services, VPC connectors)
+	if cfg.CloudRun != nil {
+		content, err := g.generateCloudRun(cfg.CloudRun)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate Cloud Run configuration: %w", err)
+		}
+		if content != "" {
+			files["cloud_run.tf"] = content
+		}
+	}
+
 	// Generate variables file - always included with default values
 	variables, err := g.generateVariables(cfg)
 	if err != nil {
@@ -425,6 +436,26 @@ func (g *Generator) generateProject(project *config.Project) (string, error) {
 	return output.String(), nil
 }
 
+// TemplateContext provides comprehensive context for template execution with dependency information
+type TemplateContext struct {
+	// Primary data for the template
+	Data interface{}
+	// Dependency information
+	Dependencies *DependencyInfo
+}
+
+// DependencyInfo contains information about resource dependencies
+type DependencyInfo struct {
+	// Whether project APIs need to be enabled first
+	RequiresProjectAPIs bool
+	// List of API dependencies
+	ProjectAPIs []string
+	// Whether networking resources are required
+	RequiresNetworking bool
+	// Network names that this resource depends on
+	NetworkDependencies []string
+}
+
 // generateNetworking generates Terraform configuration for networking resources.
 //
 // This includes VPC networks, subnets, firewall rules, NAT gateways, and
@@ -438,8 +469,18 @@ func (g *Generator) generateProject(project *config.Project) (string, error) {
 //   - google_compute_firewall for firewall rules
 //   - google_compute_router_nat for NAT gateways
 func (g *Generator) generateNetworking(networking *config.Networking) (string, error) {
+	// Create template context with dependency information
+	ctx := &TemplateContext{
+		Data: networking,
+		Dependencies: &DependencyInfo{
+			RequiresProjectAPIs: true,
+			ProjectAPIs:         []string{"compute.googleapis.com"},
+			RequiresNetworking:  false, // This IS the networking layer
+		},
+	}
+	
 	var output strings.Builder
-	err := g.templates.ExecuteTemplate(&output, "networking.tf", networking)
+	err := g.templates.ExecuteTemplate(&output, "networking.tf", ctx)
 	if err != nil {
 		return "", fmt.Errorf("template execution failed for networking configuration: %w", err)
 	}
@@ -458,8 +499,46 @@ func (g *Generator) generateNetworking(networking *config.Networking) (string, e
 //   - google_compute_autoscaler for auto-scaling policies
 //   - google_compute_instance for individual VMs
 func (g *Generator) generateCompute(compute *config.Compute) (string, error) {
+	// Collect network dependencies from compute configuration
+	var networkDeps []string
+	
+	// Check instance templates for network dependencies
+	for _, template := range compute.InstanceTemplates {
+		for _, netIface := range template.NetworkInterfaces {
+			if netIface.Network != "" {
+				networkDeps = append(networkDeps, fmt.Sprintf("google_compute_network.%s", netIface.Network))
+			}
+			if netIface.Subnetwork != "" {
+				networkDeps = append(networkDeps, fmt.Sprintf("google_compute_subnetwork.%s", netIface.Subnetwork))
+			}
+		}
+	}
+	
+	// Check individual instances for network dependencies
+	for _, instance := range compute.Instances {
+		for _, netIface := range instance.NetworkInterfaces {
+			if netIface.Network != "" {
+				networkDeps = append(networkDeps, fmt.Sprintf("google_compute_network.%s", netIface.Network))
+			}
+			if netIface.Subnetwork != "" {
+				networkDeps = append(networkDeps, fmt.Sprintf("google_compute_subnetwork.%s", netIface.Subnetwork))
+			}
+		}
+	}
+	
+	// Create template context with dependency information
+	ctx := &TemplateContext{
+		Data: compute,
+		Dependencies: &DependencyInfo{
+			RequiresProjectAPIs:     true,
+			ProjectAPIs:            []string{"compute.googleapis.com"},
+			RequiresNetworking:     len(networkDeps) > 0,
+			NetworkDependencies:    networkDeps,
+		},
+	}
+	
 	var output strings.Builder
-	err := g.templates.ExecuteTemplate(&output, "compute.tf", compute)
+	err := g.templates.ExecuteTemplate(&output, "compute.tf", ctx)
 	if err != nil {
 		return "", fmt.Errorf("template execution failed for compute configuration: %w", err)
 	}
@@ -561,6 +640,36 @@ func (g *Generator) generateOutputs(cfg *config.Config) (string, error) {
 	err := g.templates.ExecuteTemplate(&output, "outputs.tf", cfg)
 	if err != nil {
 		return "", fmt.Errorf("template execution failed for outputs configuration: %w", err)
+	}
+	return output.String(), nil
+}
+
+// generateCloudRun generates Terraform configuration for Cloud Run resources.
+//
+// This includes Cloud Run services with comprehensive configuration including
+// container settings, environment variables, secrets, traffic allocation,
+// and IAM bindings. Also supports VPC Access Connectors for private networking.
+//
+// Generated resources:
+//   - google_cloud_run_service for containerized applications
+//   - google_cloud_run_service_iam_member for access control
+//   - google_vpc_access_connector for VPC connectivity
+func (g *Generator) generateCloudRun(cloudRun *config.CloudRun) (string, error) {
+	// Create template context with dependency information
+	ctx := &TemplateContext{
+		Data: cloudRun,
+		Dependencies: &DependencyInfo{
+			RequiresProjectAPIs:     true,
+			ProjectAPIs:            []string{"run.googleapis.com", "vpcaccess.googleapis.com"},
+			RequiresNetworking:     false, // Cloud Run doesn't directly depend on networking resources
+			NetworkDependencies:    []string{},
+		},
+	}
+	
+	var output strings.Builder
+	err := g.templates.ExecuteTemplate(&output, "cloud_run.tf", ctx)
+	if err != nil {
+		return "", fmt.Errorf("template execution failed for Cloud Run configuration: %w", err)
 	}
 	return output.String(), nil
 }

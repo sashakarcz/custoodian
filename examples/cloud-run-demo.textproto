@@ -1,0 +1,122 @@
+project {
+  id: "custoodian-cloud-run-demo"
+  name: "Cloud Run Demo"
+  billing_account: "01EFB4-27DC88-8C3A31"
+  apis: [
+    GCP_API_CLOUD_RUN,
+    GCP_API_VPC_ACCESS,
+    GCP_API_IAM,
+    GCP_API_RESOURCE_MANAGER
+  ]
+}
+
+cloud_run {
+  services {
+    name: "hello-world"
+    description: "Simple hello world service"
+    location: REGION_US_CENTRAL1
+    image: "gcr.io/google-samples/hello-app:1.0"
+    
+    config {
+      port: 8080
+      cpu: "1000m"
+      memory: "512Mi"
+      max_instances: 10
+      min_instances: 0
+      max_concurrent_requests: 80
+      
+      env_vars: {
+        key: "ENV"
+        value: "production"
+      }
+      env_vars: {
+        key: "LOG_LEVEL" 
+        value: "info"
+      }
+    }
+    
+    traffic {
+      percent: 100
+    }
+    
+    labels: {
+      key: "app"
+      value: "hello-world"
+    }
+    labels: {
+      key: "environment"
+      value: "demo"
+    }
+    
+    iam_bindings {
+      role: "roles/run.invoker"
+      members: ["allUsers"]
+    }
+  }
+  
+  services {
+    name: "api-service"
+    description: "Backend API service with secrets"
+    location: REGION_US_CENTRAL1
+    image: "gcr.io/my-project/api:latest"
+    
+    config {
+      port: 3000
+      cpu: "2000m"
+      memory: "1Gi"
+      max_instances: 50
+      min_instances: 2
+      max_concurrent_requests: 100
+      timeout_seconds: 300
+      service_account: "api-service@custoodian-cloud-run-demo.iam.gserviceaccount.com"
+      
+      env_vars: {
+        key: "NODE_ENV"
+        value: "production"
+      }
+      
+      env_from_secrets {
+        name: "DATABASE_URL"
+        secret_name: "database-connection"
+        version: "latest"
+      }
+      
+      env_from_secrets {
+        name: "API_KEY"
+        secret_name: "external-api-key"
+        version: "1"
+      }
+      
+      volume_mounts {
+        name: "config"
+        mount_path: "/etc/config"
+        secret {
+          secret_name: "app-config"
+          items {
+            key: "config.json"
+            path: "app.json"
+            mode: 420
+          }
+        }
+      }
+    }
+    
+    traffic {
+      percent: 100
+    }
+    
+    labels: {
+      key: "app"
+      value: "api-service"
+    }
+    labels: {
+      key: "tier"
+      value: "backend"
+    }
+    
+    iam_bindings {
+      role: "roles/run.invoker"
+      members: ["serviceAccount:frontend@custoodian-cloud-run-demo.iam.gserviceaccount.com"]
+    }
+  }
+}

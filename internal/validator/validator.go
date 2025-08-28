@@ -532,7 +532,8 @@ func isValidGCPProjectID(id string) bool {
 }
 
 func isValidBillingAccount(account string) bool {
-	match, _ := regexp.MatchString(`^[0-9]{6}-[A-Z0-9]{6}-[A-Z0-9]{6}$`, account)
+	// GCP billing account format: XXXXXX-XXXXXX-XXXXXX where X can be digits or uppercase letters
+	match, _ := regexp.MatchString(`^[0-9A-Z]{6}-[0-9A-Z]{6}-[0-9A-Z]{6}$`, account)
 	return match
 }
 
