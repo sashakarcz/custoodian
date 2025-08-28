@@ -621,7 +621,19 @@ func (g *Generator) generateIAM(iam *config.Iam) (string, error) {
 //   - Versioning and uniform bucket-level access configuration
 func (g *Generator) generateStorage(storage *config.Storage) (string, error) {
 	var output strings.Builder
-	err := g.templates.ExecuteTemplate(&output, "storage.tf", storage)
+	
+	// Create template context with dependencies
+	ctx := &TemplateContext{
+		Data: storage,
+		Dependencies: &DependencyInfo{
+			RequiresProjectAPIs:     false,
+			ProjectAPIs:            []string{},
+			RequiresNetworking:     false,
+			NetworkDependencies:    []string{},
+		},
+	}
+	
+	err := g.templates.ExecuteTemplate(&output, "storage.tf", ctx)
 	if err != nil {
 		return "", fmt.Errorf("template execution failed for storage configuration: %w", err)
 	}
