@@ -242,6 +242,17 @@ func (g *Generator) Generate(cfg *config.Config) (map[string]string, error) {
 		}
 	}
 
+	// Generate Secret Manager resources (secrets and versions)
+	if cfg.SecretManager != nil {
+		content, err := g.generateSecretManager(cfg.SecretManager)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate Secret Manager configuration: %w", err)
+		}
+		if content != "" {
+			files["secret_manager.tf"] = content
+		}
+	}
+
 	// Generate variables file - always included with default values
 	variables, err := g.generateVariables(cfg)
 	if err != nil {
@@ -737,6 +748,37 @@ func (g *Generator) generateDatabases(databases *config.Databases) (string, erro
 	err := g.templates.ExecuteTemplate(&output, "databases.tf", ctx)
 	if err != nil {
 		return "", fmt.Errorf("template execution failed for database configuration: %w", err)
+	}
+	return output.String(), nil
+}
+
+// generateSecretManager generates Terraform configuration for Secret Manager resources.
+//
+// This includes creating secrets and secret versions with support for reading
+// values from environment variables, GitHub secrets, base64 encoded values,
+// or plain text. The function handles replication policies, customer-managed
+// encryption, and proper API dependencies.
+//
+// Generated resources:
+//   - google_secret_manager_secret for secret containers
+//   - google_secret_manager_secret_version for secret values and versions
+//   - Variables for injecting secret values from environment/GitHub
+func (g *Generator) generateSecretManager(secretManager *config.SecretManager) (string, error) {
+	// Create template context with dependency information  
+	ctx := &TemplateContext{
+		Data: secretManager,
+		Dependencies: &DependencyInfo{
+			RequiresProjectAPIs:     true,
+			ProjectAPIs:            []string{"secretmanager.googleapis.com"},
+			RequiresNetworking:     false, // Secret Manager doesn't depend on networking resources
+			NetworkDependencies:    []string{},
+		},
+	}
+	
+	var output strings.Builder
+	err := g.templates.ExecuteTemplate(&output, "secret_manager.tf", ctx)
+	if err != nil {
+		return "", fmt.Errorf("template execution failed for Secret Manager configuration: %w", err)
 	}
 	return output.String(), nil
 }

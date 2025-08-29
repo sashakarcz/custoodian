@@ -105,6 +105,7 @@ enum GcpApi {
   GCP_API_VPC_ACCESS = 19;
   GCP_API_FIREWALL = 20;
   GCP_API_SPANNER = 21;
+  GCP_API_SECRET_MANAGER = 22;
 }
 
 // Load Balancer Types

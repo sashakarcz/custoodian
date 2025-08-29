@@ -125,6 +125,7 @@ func apiToString(api config.GcpApi) string {
 		config.GcpApi_GCP_API_LOAD_BALANCING:    "compute.googleapis.com",
 		config.GcpApi_GCP_API_VPC_ACCESS:        "vpcaccess.googleapis.com",
 		config.GcpApi_GCP_API_FIREWALL:          "compute.googleapis.com",
+		config.GcpApi_GCP_API_SECRET_MANAGER:    "secretmanager.googleapis.com",
 	}
 
 	if str, ok := apiMap[api]; ok {

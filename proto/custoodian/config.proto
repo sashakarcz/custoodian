@@ -31,6 +31,9 @@ message Config {
 
   // Database configuration
   Databases databases = 8;
+
+  // Secret Manager configuration
+  SecretManager secret_manager = 9;
 }
 
 // Project represents a GCP project configuration
@@ -979,4 +982,80 @@ message CloudSpannerDatabase {
 
   // Version retention period
   string version_retention_period = 6;
+}
+
+// Secret Manager configuration
+message SecretManager {
+  // List of secrets to create
+  repeated Secret secrets = 1;
+}
+
+// Secret configuration
+message Secret {
+  // Secret name (must be unique within project)
+  string name = 1;
+
+  // Secret value source
+  oneof value_source {
+    // Plain text value (not recommended for sensitive data)
+    string plain_text = 2;
+    // Environment variable name to read value from
+    string from_env_var = 3;
+    // GitHub secret name (for GitHub Actions)
+    string from_github_secret = 4;
+    // Base64 encoded value
+    string base64_value = 5;
+  }
+
+  // Replication configuration
+  SecretReplication replication = 6;
+
+  // Labels for the secret
+  map<string, string> labels = 7;
+
+  // Annotations for the secret
+  map<string, string> annotations = 8;
+
+  // Version aliases (e.g., "latest")
+  repeated string version_aliases = 9;
+
+  // TTL for automatic deletion (optional)
+  string ttl = 10;
+
+  // Topics for notifications (optional)
+  repeated string topics = 11;
+
+  // Whether to skip secret creation if it already exists
+  bool skip_if_exists = 12;
+}
+
+// Secret replication configuration
+message SecretReplication {
+  oneof replication_type {
+    // Automatic replication across all regions
+    SecretAutomaticReplication automatic = 1;
+    // User-managed replication to specific regions
+    SecretUserManagedReplication user_managed = 2;
+  }
+}
+
+// Automatic replication configuration
+message SecretAutomaticReplication {
+  // Customer-managed encryption key (optional)
+  string kms_key_name = 1;
+}
+
+// User-managed replication configuration
+message SecretUserManagedReplication {
+  // List of replicas
+  repeated SecretReplica replicas = 1;
+}
+
+// Secret replica configuration
+message SecretReplica {
+  // Region for the replica
+  Region location = 1;
+
+  // Customer-managed encryption key (optional)
+  string kms_key_name = 2;
 }
