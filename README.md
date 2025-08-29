@@ -828,7 +828,7 @@ Custoodian follows a modular architecture designed for extensibility and maintai
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   CLI Layer     │    │  Validation      │    │   Generation    │
 │                 │    │                  │    │                 │
-│ • Command       │────▶ • Proto         │────▶ • Template      │
+│ • Command       │────▶ • Proto         │────▶ • Template     │
 │   Parsing       │    │   Validation     │    │   Processing    │
 │ • Flag          │    │ • Business       │    │ • Resource      │
 │   Handling      │    │   Rules          │    │   Generation    │
